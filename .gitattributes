@@ -1,4 +1,2 @@
 * linguist-vendored
-*.py linguist-vendored=true
-*.csv linguist-vendored=false
-*.db linguist-vendored=false
+*.py linguist-vendored=false
