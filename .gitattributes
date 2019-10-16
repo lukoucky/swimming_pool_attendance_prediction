@@ -1,4 +1,4 @@
 * linguist-vendored
-*.py linguist-detectable=true
-*.csv linguist-detectable=false
-*.db linguist-detectable=false
+*.py linguist-vendored=true
+*.csv linguist-vendored=false
+*.db linguist-vendored=false
