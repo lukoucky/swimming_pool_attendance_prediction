@@ -1,3 +1,4 @@
+* linguist-vendored
 *.py linguist-detectable=true
 *.csv linguist-detectable=false
 *.db linguist-detectable=false
