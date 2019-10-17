@@ -26,17 +26,16 @@ def get_all_occupancy_data(remove_closed=True):
 	:return: DataFrame with all occupancy data from database
 	"""
 	if remove_closed:
-		query = """
+		query =	"""
 				SELECT * FROM occupancy WHERE 
-				(day_of_week < 5  AND SUBSTR(time, 12, 5) > '05:58' AND SUBSTR(time, 12, 5) < '22:01') 
+				(day_of_week < 5  AND SUBSTR(time, 12, 2) > '03' AND SUBSTR(time, 12, 5) < '22:01') 
 				OR 
-				(day_of_week > 4  AND SUBSTR(time, 12, 5) > '09:58' AND SUBSTR(time, 12, 5) < '22:01');
+				(day_of_week > 4  AND SUBSTR(time, 12, 2) > '07' AND SUBSTR(time, 12, 5) < '22:01');
 				"""
 	else:
 		query = 'SELECT * FROM occupancy'
 
 	return get_data_from_database(query)
-	# return data_frame.iloc[160000:161000]
 
 
 def add_lines_info_to_data(input_data_frame):
@@ -112,7 +111,7 @@ def get_weather_for_time_stamp(ts):
 	"""
 	ts_string = ts.strftime('%Y-%m-%d %H:%M:%S')
 	weather_data = WeatherData(ts, 1)
-	query = """SELECT w.time, w.temperature, w.wind, w.humidity, w.precipitation, w.pressure, w.station,
+	query =	"""SELECT w.time, w.temperature, w.wind, w.humidity, w.precipitation, w.pressure, w.station,
 			abs(strftime(\'%%s\', \'%s\') - strftime(\'%%s\', w.time)) as 'closest_time'
 			FROM weather_history w ORDER BY  abs(strftime(\'%%s\', \'%s\') - strftime(\'%%s\', time)) 
 			limit 30;""" % (ts_string, ts_string)
@@ -210,7 +209,7 @@ def add_public_holidays(data_frame):
 	holidays = [
 		'2017-01-01', '2017-04-14', '2017-04-17', '2017-05-01', '2017-05-08', '2017-07-05', '2017-07-06',
 		'2017-09-28', '2017-10-28', '2017-11-17', '2017-12-24', '2017-12-25', '2017-12-26', '2018-01-01',
-		'2018-03-30', '2018-04-02',	'2018-05-01', '2018-05-08', '2018-07-05', '2018-07-06', '2018-09-28',
+		'2018-03-30', '2018-04-02', '2018-05-01', '2018-05-08', '2018-07-05', '2018-07-06', '2018-09-28',
 		'2018-10-28', '2018-11-17', '2018-12-24', '2018-12-25', '2018-12-26', '2019-01-01', '2019-04-19',
 		'2019-04-22', '2019-05-01', '2019-05-08', '2019-07-05', '2019-07-06', '2019-09-28', '2019-10-28',
 		'2019-11-17', '2019-12-24', '2019-12-25', '2019-12-26', '2020-01-01', '2020-04-10', '2020-04-13']
