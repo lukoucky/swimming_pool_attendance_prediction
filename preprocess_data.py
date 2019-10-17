@@ -222,6 +222,29 @@ def add_public_holidays(data_frame):
 	return data_frame
 
 
+def resample_timestamp(data_frame):
+	"""
+	Generates new columns `month`, `day`, `hour` and `minute` from time stamp in format
+	'YYYY-MM-DD HH:mm:ss' in column `time`. time column will than not be used for machine learning
+	and used only for splitting data to train/validation/test datasets.
+	Four new columns will be used for training and prediction.	
+	:return: Updated data_frame
+	"""
+	data_frame['month'] = 0
+	data_frame['day'] = 0
+	data_frame['hour'] = 0
+	data_frame['minute'] = 0
+
+	for index, row in data_frame.iterrows():
+		ts = row['time']
+		data_frame.at[index, 'month'] = ts[5:7]
+		data_frame.at[index, 'day'] = ts[8:10]
+		data_frame.at[index, 'hour'] = ts[11:13]
+		data_frame.at[index, 'minute'] = ts[14:16]
+
+	return data_frame
+
+
 def split_csv(data_frame, train_portion=0.4, validation_portion=0.2):
 	"""
 	Splits data_frame into train, validation and test part and save them into 3 csv files.
@@ -230,19 +253,6 @@ def split_csv(data_frame, train_portion=0.4, validation_portion=0.2):
 			train_portion + validation_portion must be less than 1.0
 	:param validation_portion: Float from 0.0 to 1.0 representing portion of data used for validation.
 	"""
-	data_frame['month'] = 0
-	data_frame['day'] = 0
-	data_frame['hour'] = 0
-	data_frame['minute'] = 0
-	
-	for index, row in data_frame.iterrows():
-		ts = row['time']
-		data_frame.at[index, 'month'] = ts[5:7]
-		data_frame.at[index, 'day'] = ts[8:10]
-		data_frame.at[index, 'hour'] = ts[11:13]
-		data_frame.at[index, 'minute'] = ts[14:16]
-	data_frame.drop(columns=['time'], inplace=True)
-
 	rows = data_frame.index.values
 	Random(RANDOM_SEED).shuffle(rows)
 
@@ -261,6 +271,7 @@ def split_csv(data_frame, train_portion=0.4, validation_portion=0.2):
 
 if __name__ == '__main__':
 	df = get_all_occupancy_data()
+	df = resample_timestamp(df)
 	df = add_public_holidays(df)
 	df = add_weather_info_to_data(df)
 	df = add_lines_info_to_data(df)
