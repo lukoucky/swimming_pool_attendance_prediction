@@ -1,2 +1,1 @@
-* linguist-vendored
-*.csv linguist-vendored=true
+data/* linguist-vendored
