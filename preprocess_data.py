@@ -231,6 +231,19 @@ def split_csv(data_frame, train_portion=0.4, validation_portion=0.2):
 			train_portion + validation_portion must be less than 1.0
 	:param validation_portion: Float from 0.0 to 1.0 representing portion of data used for validation.
 	"""
+	data_frame['month'] = 0
+	data_frame['day'] = 0
+	data_frame['hour'] = 0
+	data_frame['minute'] = 0
+	
+	for index, row in data_frame.iterrows():
+		ts = row['time']
+		data_frame.at[index, 'month'] = ts[5:7]
+		data_frame.at[index, 'day'] = ts[8:10]
+		data_frame.at[index, 'hour'] = ts[11:13]
+		data_frame.at[index, 'minute'] = ts[14:16]
+	data_frame.drop(columns=['time'], inplace=True)
+
 	rows = data_frame.index.values
 	Random(RANDOM_SEED).shuffle(rows)
 
