@@ -125,24 +125,30 @@ class Day(object):
 
 		return x, y
 
-	def build_timeseries(self, time_step=3):
+	def build_timeseries(self, time_step=3, normalize=True):
 		"""
 		Creates vector of prediction results and features.
 		:param time_step: Number of time stamps packed together as input features
 		:return: Two numpy arrays with features and results
 		"""
-		clean_data = self.data.copy()
+		if normalize:
+			clean_data = self.get_normalized_data()
+		else:
+			clean_data = self.data.copy()
 		clean_data.drop(columns=['time'], inplace=True)
 		return self.data_frame_to_timeseries_numpy(clean_data, time_step)
 
-	def build_timeseries_without_reservations(self, time_step=3):
+	def build_timeseries_without_reservations(self, time_step=3, normalize=True):
 		"""
 		Creates vector of prediction results and features without reservation organisations.
 		:param time_step: Number of time stamps packed together as input features
 		:return: Two numpy arrays with features and results
 		"""
 		reservation_columns = ['time']
-		clean_data = self.data.copy()
+		if normalize:
+			clean_data = self.get_normalized_data()
+		else:
+			clean_data = self.data.copy()
 		for column in self.data:
 			if column.startswith('reserved_'):
 				reservation_columns.append(column)
@@ -158,6 +164,43 @@ class Day(object):
 		stop = self.close_index - self.begin_index
 		attandance = self.data['pool'][start:stop]
 		return sum(attandance == 0)
+
+	def get_normalized_data(self):
+		df = self.data.copy()
+
+		df[df['pool'] < 0] = 0
+		df[df['pool'] > 400] = 400
+		df['pool'] = df['pool']/400
+		
+		df['lines_reserved'] = df['lines_reserved']/8
+		df['day_of_week'] = df['day_of_week']/6
+		df['month'] = df['month']/12
+		df['day'] = df['day']/31
+		df['hour'] = df['hour']/24
+		df['minute'] = df['minute']/60
+
+		df[df['temperature'] < -45] = -45
+		df[df['temperature'] > 45] = 45
+		df['temperature'] = (df['temperature']+45.0)/90.0
+
+		df[df['wind'] < 0] = 0
+		df[df['wind'] > 100] = 100
+		df['wind'] = df['wind']/100
+
+		df[df['humidity'] < 0] = 0
+		df[df['humidity'] > 100] = 100
+		df['humidity'] = df['humidity']/100
+
+		df[df['precipitation'] < 0] = 0
+		df[df['precipitation'] > 100] = 100
+		df['precipitation'] = df['precipitation']/100
+
+		df[df['pressure'] < 800] = 800
+		df[df['pressure'] > 1200] = 1200
+		df['pressure'] = (df['pressure']-800)/400
+
+		return df
+
 
 	def __repr__(self):
 		return 'ts: %s, %d - %d - %d - %d' % (self.ts.strftime('%Y-%m-%d %H:%M:%S'), self.begin_index, self.open_index, self.close_index, self.end_index)
