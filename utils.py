@@ -1,5 +1,5 @@
 import datetime
-
+import numpy as np
 
 class WeatherData(object):
 	"""
@@ -86,5 +86,76 @@ class Measurement(object):
 		s = 'temperature = %d, wind = %d, humidity = %d, precipitation = %d, pressure = %d' % (self.temperature, self.wind, self.humidity, self.precipitation, self.pressure)
 		return s
 
+class Day(object):
+	"""
+	Helper class that holds information about one day in dataset.
+	It contains indices where day starts and ends in dataset DataFrame.
+	"""
+	def __init__(self, ts):
+		"""
+		Constructor for Day class
+		:param ts: Full time stamp 
+		"""
+		self.ts = ts
+		self.begin_index = 0
+		self.end_index = 0
+		self.open_index = 0
+		self.close_index = 0
+		self.data = None
 
+	def data_drame_to_timeseries_numpy(self, data, time_step=3):
+		"""
+		Creates vector of prediction results and features.
+		:param data: DataFrame 
+		:param time_step: Number of time stamps packed together as input features
+		:return: Two numpy arrays with features and results
+		"""
+		matrix = data.to_numpy()
+		dim_0 = matrix.shape[0] - time_step
+		dim_1 = matrix.shape[1]
 
+		x = np.zeros((dim_0, time_step*dim_1))
+		y = np.zeros((dim_0,))
+		
+		for i in range(dim_0):
+			x_data = matrix[i:time_step+i]
+			x[i] = np.reshape(x_data,x_data.shape[0]*x_data.shape[1])
+			y[i] = matrix[time_step+i, 0]
+		return x, y
+
+	def build_timeseries(self, time_step=3):
+		"""
+		Creates vector of prediction results and features.
+		:param time_step: Number of time stamps packed together as input features
+		:return: Two numpy arrays with features and results
+		"""
+		clean_data = self.data.copy()
+		clean_data.drop(columns=['time'], inplace=True)
+		return self.data_drame_to_timeseries_numpy(clean_data, time_step)
+
+	def build_timeseries_without_reservations(self, time_step=3):
+		"""
+		Creates vector of prediction results and features without reservation organisations.
+		:param time_step: Number of time stamps packed together as input features
+		:return: Two numpy arrays with features and results
+		"""
+		reservation_columns = ['time']
+		clean_data = self.data.copy()
+		for column in self.data:
+			if column.startswith('reserved_'):
+				reservation_columns.append(column)
+		clean_data.drop(columns=reservation_columns, inplace=True)
+		return self.data_drame_to_timeseries_numpy(clean_data, time_step)
+
+	def get_zero_attandance_during_open_hours(self):
+		"""
+		Counts how many data samples from open hours have zero attandance in pool.
+		:return: Number of zeros in `pool` column between open_index and close_index
+		"""
+		start = self.open_index - self.begin_index
+		stop = self.close_index - self.begin_index
+		attandance = self.data['pool'][start:stop]
+		return sum(attandance == 0)
+
+	def __repr__(self):
+		return 'ts: %s, %d - %d - %d - %d' % (self.ts.strftime('%Y-%m-%d %H:%M:%S'), self.begin_index, self.open_index, self.close_index, self.end_index)
