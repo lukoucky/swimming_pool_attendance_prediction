@@ -1,6 +1,7 @@
 import datetime
 import numpy as np
 
+
 class WeatherData(object):
 	"""
 	WeatherData object holds weather measurements at particular time stamp from all available measurement stations.
@@ -103,7 +104,7 @@ class Day(object):
 		self.close_index = 0
 		self.data = None
 
-	def data_drame_to_timeseries_numpy(self, data, time_step=3):
+	def data_frame_to_timeseries_numpy(self, data, time_step=3):
 		"""
 		Creates vector of prediction results and features.
 		:param data: DataFrame 
@@ -121,6 +122,7 @@ class Day(object):
 			x_data = matrix[i:time_step+i]
 			x[i] = np.reshape(x_data,x_data.shape[0]*x_data.shape[1])
 			y[i] = matrix[time_step+i, 0]
+
 		return x, y
 
 	def build_timeseries(self, time_step=3):
@@ -131,7 +133,7 @@ class Day(object):
 		"""
 		clean_data = self.data.copy()
 		clean_data.drop(columns=['time'], inplace=True)
-		return self.data_drame_to_timeseries_numpy(clean_data, time_step)
+		return self.data_frame_to_timeseries_numpy(clean_data, time_step)
 
 	def build_timeseries_without_reservations(self, time_step=3):
 		"""
@@ -145,7 +147,7 @@ class Day(object):
 			if column.startswith('reserved_'):
 				reservation_columns.append(column)
 		clean_data.drop(columns=reservation_columns, inplace=True)
-		return self.data_drame_to_timeseries_numpy(clean_data, time_step)
+		return self.data_frame_to_timeseries_numpy(clean_data, time_step)
 
 	def get_zero_attandance_during_open_hours(self):
 		"""
