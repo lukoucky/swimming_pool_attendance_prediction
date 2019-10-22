@@ -188,25 +188,49 @@ class Day(object):
 		df['hour'] = df['hour']/24
 		df['minute'] = df['minute']/60
 
-		df[df['temperature'] < -45] = -45
-		df[df['temperature'] > 45] = 45
-		df['temperature'] = (df['temperature']+45.0)/90.0
+		for column in self.data.columns:
+			if column.startswith('reserved_'):
+				df[column] = df[column]/8
 
-		df[df['wind'] < 0] = 0
-		df[df['wind'] > 100] = 100
-		df['wind'] = df['wind']/100
+		if 'temperature' in self.data.columns:
+			df[df['temperature'] < -45] = -45
+			df[df['temperature'] > 45] = 45
+			df['temperature'] = (df['temperature']+45.0)/90.0
 
-		df[df['humidity'] < 0] = 0
-		df[df['humidity'] > 100] = 100
-		df['humidity'] = df['humidity']/100
+		if 'wind' in self.data.columns:
+			df[df['wind'] < 0] = 0
+			df[df['wind'] > 100] = 100
+			df['wind'] = df['wind']/100
 
-		df[df['precipitation'] < 0] = 0
-		df[df['precipitation'] > 100] = 100
-		df['precipitation'] = df['precipitation']/100
+		if 'humidity' in self.data.columns:
+			df[df['humidity'] < 0] = 0
+			df[df['humidity'] > 100] = 100
+			df['humidity'] = df['humidity']/100
 
-		df[df['pressure'] < 800] = 800
-		df[df['pressure'] > 1200] = 1200
-		df['pressure'] = (df['pressure']-800)/400
+		if 'precipitation' in self.data.columns:
+			df[df['precipitation'] < 0] = 0
+			df[df['precipitation'] > 100] = 100
+			df['precipitation'] = df['precipitation']/100
+
+		if 'pressure' in self.data.columns:
+			df[df['pressure'] < 800] = 800
+			df[df['pressure'] > 1200] = 1200
+			df['pressure'] = (df['pressure']-800)/400
+
+		if 'temperature_binned' in self.data.columns:
+			df['temperature_binned'] = df['temperature_binned']/7
+
+		if 'wind_binned' in self.data.columns:
+			df['wind_binned'] = df['wind_binned']/5
+
+		if 'humidity_binned' in self.data.columns:
+			df['humidity_binned'] = df['humidity_binned']/4
+
+		if 'precipitation_binned' in self.data.columns:
+			df['precipitation_binned'] = df['precipitation_binned']/3
+
+		if 'pressure_binned' in self.data.columns:
+			df['pressure_binned'] = df['pressure_binned']/4
 
 		return df
 
