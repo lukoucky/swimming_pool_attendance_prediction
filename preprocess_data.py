@@ -4,6 +4,7 @@ import pandas as pd
 from utils import WeatherData
 from random import Random
 from configuration import *
+import matplotlib.pyplot as plt
 
 
 def get_data_from_database(query, db_path=DB_PATH):
@@ -269,12 +270,104 @@ def split_csv(data_frame, train_portion=0.4, validation_portion=0.2):
 	save_data_to_csv(test_data, TEST_DATASET_CSV_PATH)
 
 
+def generate_csv():
+	"""
+	Generates csv file to configuration.DATASET_CSV_PATH path from
+	SQLite database located at configuration.DB_PATH
+	"""
+	data_frame = get_all_occupancy_data()
+	data_frame = resample_timestamp(data_frame)
+	data_frame = add_public_holidays(data_frame)
+	data_frame = add_weather_info_to_data(data_frame)
+	data_frame = add_lines_info_to_data(data_frame)
+	data_frame = clean_data(data_frame)
+	save_data_to_csv(data_frame, DATASET_CSV_PATH)
+
+
+def load_csv():
+	"""
+	Loads generated csv file from configuration.DATASET_CSV_PATH
+	:return: DataFrame with loaded csv file. Empty DataFrame if file does not exist.
+	"""
+	try:
+		df = pd.read_csv(DATASET_CSV_PATH)
+	except:
+		print('Error reading %s. Make sure file exists or try to regenerate it using generate_csv() method.')
+		df = pd.DataFrame()
+
+	return df
+
+
+def scatter_plot_attendance_dependency(column, data, remove_zero_attendance=True):
+	"""
+	Plots scatter plot where x axis shows attendance and y axis shows values from `column`
+	:param column: Name of column to use for plotting
+	:param data: DataFrame with all data
+	:param remove_zero_attendance: True if only data where pool attendance is above zero are used
+	"""
+	if remove_zero_attendance:
+		plt.scatter(data[data['pool'] > 0][column], data[data['pool'] > 0]['pool'], c="g", alpha=0.01)
+	else:
+		plt.scatter(data[column], data['pool'], c="g", alpha=0.01)
+	plt.ylabel("Attendance")
+	plt.xlabel(column)
+	plt.show()
+
+
+def cut_weather(data_frame, drop_original=False):
+	"""
+	Resample weather data into bins.
+	:param data_frame: DataFrame to resample
+	:param drop_original: True if original weather columns should be dropped from data_frame
+	:return: Resampled data_frame
+	"""
+	bins_temperature = [-100, -5, 0, 5, 10, 15, 20, 25, 100]
+	data_frame['temperature_binned'] = pd.cut(data_frame['temperature'], bins=bins_temperature, labels=False)
+	bins_wind = [-1, 1, 5, 10, 15, 20, 1000]
+	data_frame['wind_binned'] = pd.cut(data_frame['wind'], bins=bins_wind, labels=False)
+	bins_humidity = [-1, 20, 40, 60, 80, 100]
+	data_frame['humidity_binned'] = pd.cut(data_frame['humidity'], bins=bins_humidity, labels=False)
+	bins_precipitation = [-1.0, 0.1, 5.0, 10.0, 1000.0]
+	data_frame['precipitation_binned'] = pd.cut(data_frame['precipitation'], bins=bins_precipitation, labels=False)
+	bins_pressure = [0, 1000, 1010, 1020, 1030, 2000]
+	data_frame['pressure_binned'] = pd.cut(data_frame['pressure'], bins=bins_pressure, labels=False)
+
+	if drop_original:
+		data_frame.drop(columns=['temperature'], inplace=True)
+		data_frame.drop(columns=['wind'], inplace=True)
+		data_frame.drop(columns=['humidity'], inplace=True)
+		data_frame.drop(columns=['precipitation'], inplace=True)
+		data_frame.drop(columns=['pressure'], inplace=True)
+
+	return data_frame
+
+
+def cut_lines_reservation(data_frame, drop_limit=200):
+	"""
+	Drops reservation columns with less than `drop_limit` time stamps
+	in reservation and move their values to new column `reserved_other`.
+	:param data_frame: DataFrame to resample
+	:param drop_limit: Limit for nonzero rows for drop
+	:return: Resampled data_frame
+	"""
+	to_drop = ['reserved_Unknown']
+	df_other = data_frame['reserved_Unknown']
+	for column in data_frame.columns:
+		if column.startswith('reserved_'):
+			total_reservations = sum(data_frame[column] > 0)
+			if total_reservations < drop_limit:
+				to_drop.append(column)
+				df_other = df_other.add(data_frame[column], axis='index')
+
+	data_frame['reserved_other'] = df_other
+	data_frame.drop(columns=to_drop, inplace=True)
+	return data_frame
+
+
 if __name__ == '__main__':
-	df = get_all_occupancy_data()
-	df = resample_timestamp(df)
-	df = add_public_holidays(df)
-	df = add_weather_info_to_data(df)
-	df = add_lines_info_to_data(df)
-	df = clean_data(df)
+	df = load_csv()
+	df = cut_weather(df, True)
+	df = cut_lines_reservation(df)
 	save_data_to_csv(df, DATASET_CSV_PATH)
-	split_csv(df)
+
+
