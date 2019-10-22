@@ -101,27 +101,19 @@ def generate_days_list(data_frame, pickle_export_path=None):
 	return train_data, validation_data, test_data
 
 
-def predict_day(predictor, day):
-	x, y = day.build_timeseries()
+def predict_day(predictor, day, without_reserved=False):
+	if without_reserved:
+		x, y = day.build_timeseries_without_reservations()
+	else:
+		x, y = day.build_timeseries()
+	print(x.shape,y.shape)
+	print(int(x.shape[1]/3), int((x.shape[1]/3)*2))
 	y_pred = list()
 	for i, data in enumerate(x):
 		if i > 3:
 			data[0] = y_pred[-3]
-			data[112] = y_pred[-2]
-			data[224] = y_pred[-1]
-		prediction = predictor.predict([data])
-		y_pred.append(prediction[0])
-	return y_pred
-
-
-def predict_day_without_reservations(predictor, day):
-	x, y = day.build_timeseries_without_reservations()
-	y_pred = list()
-	for i, data in enumerate(x):
-		if i > 3:
-			data[0] = y_pred[-3]
-			data[13] = y_pred[-2]
-			data[26] = y_pred[-1]
+			data[int(x.shape[1]/3)] = y_pred[-2]
+			data[int((x.shape[1]/3)*2)] = y_pred[-1]
 		prediction = predictor.predict([data])
 		y_pred.append(prediction[0])
 	return y_pred
@@ -210,32 +202,122 @@ def train_adaboost(x, y, n_estimators):
 			pickle.dump(clf, f)
 		return clf
 
+def train_svr(x, y):
+	x_len = x.shape[1]
+	pickle_name = 'data/svr_%d' % (x_len)
+	if os.path.isfile(pickle_name):
+		with open(pickle_name, 'rb') as f:
+			clf = pickle.load(f)
+		return clf
+	else:
+		clf = SVR()
+		clf.fit(x, y)
+		with open(pickle_name, 'wb') as f:
+			pickle.dump(clf, f)
+		return clf
+
+
+def train_extra_tree(x, y, n_estimators):
+	x_len = x.shape[1]
+	pickle_name = 'data/extra_tree_n%d_%d' % (n_estimators, x_len)
+	if os.path.isfile(pickle_name):
+		with open(pickle_name, 'rb') as f:
+			clf = pickle.load(f)
+		return clf
+	else:
+		clf = ExtraTreesClassifier(n_estimators=n_estimators)
+		clf.fit(x, y)
+		with open(pickle_name, 'wb') as f:
+			pickle.dump(clf, f)
+		return clf
+
+
+def feature_importance(clf_s, x_test_s):
+	importances = clf_s.feature_importances_
+	std = np.std([tree.feature_importances_ for tree in clf_s.estimators_], axis=0)
+	indices = np.argsort(importances)[::-1]
+
+	# Print the feature ranking
+	print("Feature ranking:")
+	names = list(d_test[day_id].data.columns)
+	names.remove('time')
+
+	names_copy = copy.deepcopy(names)
+	for i, name in enumerate(names_copy):
+		if name.startswith('reserved_'):
+			names.remove(name)
+
+	l_names = len(names)
+	names += names
+	names += names
+
+	l = l_names
+	n = 1
+	for i, name in enumerate(names):
+		names[i] = name + '_' + str(n)
+		if i == l-1:
+			n += 1
+			l += l_names
+
+	print(x_test_s.shape)
+	for f in range(x_test_s.shape[1]):
+		print("%d. feature %d (%s) (%f)" % (f + 1, indices[f], names[indices[f]], importances[indices[f]]))
+
+	# Plot the feature importances of the forest
+	plt.figure()
+	plt.title("Feature importances")
+	plt.bar(range(x_test_s.shape[1]), importances[indices], color="r", yerr=std[indices], align="center")
+	plt.xticks(range(x_test_s.shape[1]), indices)
+	plt.xlim([-1, x_test_s.shape[1]])
+	plt.show()
+
+
+def plot_heatmap(column1, column2, data_train, data_val, data_test):
+	pool = []
+	var1 = []
+	var2 = []
+	data = data_train + data_val + data_test
+	for day in data:
+		for index, row in day.data.iterrows():
+			if row['pool'] > 0:
+				pool.append(row['pool'])
+				second.append(row[column])
+
+	plt.scatter(second, pool, c="g", alpha=0.01)
+	plt.ylabel("Attendance")
+	plt.xlabel(column)
+	plt.show()
+
+
 if __name__ == '__main__':
 	d_train, d_val, d_test = get_data('data/days.pickle')
 
 	# x_train_s, y_train_s = build_feature_vector(d_train, True)
 	# x_test_s, y_test_s = build_feature_vector(d_test, True)
-
+	
 	# x_train, y_train = build_feature_vector(d_train)
 	# x_test, y_test = build_feature_vector(d_test)
-
+	
 	# data = [x_train, y_train, x_test, y_test]
 	# data_s = [x_train_s, y_train_s, x_test_s, y_test_s]
-
+	
 	# with open('data/data.pickle', 'wb') as f:
 	# 	pickle.dump(data, f)
-
+	
 	# with open('data/data_s.pickle', 'wb') as f:
 	# 	pickle.dump(data_s, f)
 
 	with open('data/data.pickle', 'rb') as f:
 		x_train, y_train, x_test, y_test = pickle.load(f)
-
+	
 	with open('data/data_s.pickle', 'rb') as f:
 		x_train_s, y_train_s, x_test_s, y_test_s = pickle.load(f)
+	#
+	# clf = train_extra_tree(x_train, y_train, 10)
+	# clf_s = train_extra_tree(x_train_s, y_train_s, 10)
 
-	clf = train_random_forrest(x_train, y_train, 10)
-	clf_s = train_random_forrest(x_train_s, y_train_s, 10)
+	clf = train_random_forrest(x_train, y_train, 20)
+	clf_s = train_random_forrest(x_train_s, y_train_s, 20)
 
 	# clf = train_adaboost(x_train, y_train, 50)
 	# clf_s = train_adaboost(x_train_s, y_train_s, 50)
@@ -244,11 +326,12 @@ if __name__ == '__main__':
 	day_id = 56
 	x, y = d_test[day_id].build_timeseries()
 	y_pred = predict_day(clf, d_test[day_id])
-	y_pred_s = predict_day_without_reservations(clf_s, d_test[day_id])
-
+	y_pred_s = predict_day(clf_s, d_test[day_id], True)
+	
 	l1, = plt.plot(y, label='GT')
 	l2, = plt.plot(y_pred, label='Full dataset')
 	l3, = plt.plot(y_pred_s, label='No reserve')
 	plt.legend(handles=[l1, l2, l3])
-	plt.show()	
+	plt.show()
 
+	# TODO: Split weekend and weekday classifiers
