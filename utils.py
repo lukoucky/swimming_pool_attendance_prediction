@@ -87,6 +87,7 @@ class Measurement(object):
 		s = 'temperature = %d, wind = %d, humidity = %d, precipitation = %d, pressure = %d' % (self.temperature, self.wind, self.humidity, self.precipitation, self.pressure)
 		return s
 
+
 class Day(object):
 	"""
 	Helper class that holds information about one day in dataset.
@@ -103,6 +104,7 @@ class Day(object):
 		self.open_index = 0
 		self.close_index = 0
 		self.data = None
+		self.timeseries_export_ignore = ['time', 'humidity', 'pressure']
 
 	def data_frame_to_timeseries_numpy(self, data, time_step=3):
 		"""
@@ -112,6 +114,7 @@ class Day(object):
 		:return: Two numpy arrays with features and results
 		"""
 		matrix = data.to_numpy()
+		# matrix = data.values
 		dim_0 = matrix.shape[0] - time_step
 		dim_1 = matrix.shape[1]
 
@@ -125,10 +128,11 @@ class Day(object):
 
 		return x, y
 
-	def build_timeseries(self, time_step=3, normalize=True):
+	def build_timeseries(self, time_step=3, normalize=False):
 		"""
 		Creates vector of prediction results and features.
 		:param time_step: Number of time stamps packed together as input features
+		:param normalize: True if timeseries should be normalized
 		:return: Two numpy arrays with features and results
 		"""
 		if normalize:
@@ -138,10 +142,11 @@ class Day(object):
 		clean_data.drop(columns=['time'], inplace=True)
 		return self.data_frame_to_timeseries_numpy(clean_data, time_step)
 
-	def build_timeseries_without_reservations(self, time_step=3, normalize=True):
+	def build_timeseries_without_reservations(self, time_step=3, normalize=False):
 		"""
 		Creates vector of prediction results and features without reservation organisations.
 		:param time_step: Number of time stamps packed together as input features
+		:param normalize: True if timeseries should be normalized
 		:return: Two numpy arrays with features and results
 		"""
 		reservation_columns = ['time']
@@ -166,6 +171,10 @@ class Day(object):
 		return sum(attandance == 0)
 
 	def get_normalized_data(self):
+		"""
+		Normalizes all numeric columns in self.data.
+		:return: Normalized self.data
+		"""
 		df = self.data.copy()
 
 		df[df['pool'] < 0] = 0
