@@ -13,7 +13,7 @@ from sklearn.svm import SVC
 import matplotlib.pyplot as plt
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
-
+from models.lstm import LSTM_classifier
 
 def trim_dataset(data, batch_size):
 	"""
@@ -119,14 +119,14 @@ def predict_day(predictor, day, without_reserved=False):
 	return y_pred
 
 
-def build_feature_vector(days_list, without_reserved=False):
+def build_feature_vector(days_list, without_reserved=False, normalize=False):
 	x = list()
 	y = list()
 	for day in days_list:
 		if without_reserved:
-			x_day, y_day = day.build_timeseries_without_reservations()
+			x_day, y_day = day.build_timeseries_without_reservations(3, normalize)
 		else:
-			x_day, y_day = day.build_timeseries()
+			x_day, y_day = day.build_timeseries(3, normalize)
 		x.append(x_day)
 		y.append(y_day)
 
@@ -292,46 +292,66 @@ def plot_heatmap(column1, column2, data_train, data_val, data_test):
 if __name__ == '__main__':
 	d_train, d_val, d_test = get_data('data/days.pickle')
 
-	# x_train_s, y_train_s = build_feature_vector(d_train, True)
-	# x_test_s, y_test_s = build_feature_vector(d_test, True)
+	# x_train_s, y_train_s = build_feature_vector(d_train, True, True)
+	# x_test_s, y_test_s = build_feature_vector(d_test, True, True)
 	
-	# x_train, y_train = build_feature_vector(d_train)
-	# x_test, y_test = build_feature_vector(d_test)
+	# x_train, y_train = build_feature_vector(d_train, False, True)
+	# x_test, y_test = build_feature_vector(d_test, False, True)
 	
 	# data = [x_train, y_train, x_test, y_test]
 	# data_s = [x_train_s, y_train_s, x_test_s, y_test_s]
 	
-	# with open('data/data.pickle', 'wb') as f:
+	# with open('data/data_normalize.pickle', 'wb') as f:
 	# 	pickle.dump(data, f)
 	
-	# with open('data/data_s.pickle', 'wb') as f:
+	# with open('data/data_s_normalize.pickle', 'wb') as f:
 	# 	pickle.dump(data_s, f)
 
-	with open('data/data.pickle', 'rb') as f:
+	# x_val, y_val = build_feature_vector(d_val, False, True)
+	# data_val = [x_val, y_val]
+	# with open('data/data_validation_normalize.pickle', 'wb') as f:
+	# 	pickle.dump(data_val, f)
+
+	with open('data/data_validation_normalize.pickle', 'rb') as f:
+		x_val, y_val = pickle.load(f)
+
+	with open('data/data_normalize.pickle', 'rb') as f:
 		x_train, y_train, x_test, y_test = pickle.load(f)
 	
-	with open('data/data_s.pickle', 'rb') as f:
+	with open('data/data_s_normalize.pickle', 'rb') as f:
 		x_train_s, y_train_s, x_test_s, y_test_s = pickle.load(f)
-	#
-	# clf = train_extra_tree(x_train, y_train, 10)
+
+	clf = LSTM_classifier()
+	clf.add_data(x_train, x_val, x_test, y_train, y_val, y_test)
+	# clf.train_model()
+	# clf.save_model()
+
+
+
+	# clf = train_extra_tree(x_train, y_train, 10)data_shaped
 	# clf_s = train_extra_tree(x_train_s, y_train_s, 10)
 
-	clf = train_random_forrest(x_train, y_train, 20)
-	clf_s = train_random_forrest(x_train_s, y_train_s, 20)
+	# clf = train_random_forrest(x_train, y_train, 20)
+	# clf_s = train_random_forrest(x_train_s, y_train_s, 20)
 
 	# clf = train_adaboost(x_train, y_train, 50)
 	# clf_s = train_adaboost(x_train_s, y_train_s, 50)
 	# clf = SVC(gamma='auto')
+	
 
-	day_id = 56
+
+	day_id = 2
 	x, y = d_test[day_id].build_timeseries()
-	y_pred = predict_day(clf, d_test[day_id])
-	y_pred_s = predict_day(clf_s, d_test[day_id], True)
+	clf.load_model()
+	y_pred = clf.predict_day(d_test[day_id])
+	print(y_pred)
+	# y_pred = predict_day(clf, d_test[day_id])
+	# y_pred_s = predict_day(clf_s, d_test[day_id], True)
 	
 	l1, = plt.plot(y, label='GT')
 	l2, = plt.plot(y_pred, label='Full dataset')
-	l3, = plt.plot(y_pred_s, label='No reserve')
-	plt.legend(handles=[l1, l2, l3])
+	# l3, = plt.plot(y_pred_s, label='No reserve')
+	plt.legend(handles=[l1, l2])
 	plt.show()
 
 	# TODO: Split weekend and weekday classifiers
