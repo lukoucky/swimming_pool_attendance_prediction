@@ -13,9 +13,10 @@ class Model(ABC):
 		self.model = classificator
 		self.random_param_search = None
 		self.are_parameters_tuned = False
+		self.without_reserved = False
 
 	@abstractmethod
-	def fit(self, data):
+	def fit(self, without_reserved=False):
 		pass
 
 	@abstractmethod
@@ -32,7 +33,7 @@ class Model(ABC):
 
 	def load_data(self, without_reserved=False, normalize=False):
 		data_path = 'data/data'
-		if without_reserved:
+		if self.without_reserved or without_reserved:
 			data_path += '_short'
 		if normalize:
 			data_path += '_normalize'
@@ -42,17 +43,20 @@ class Model(ABC):
 			with open(data_path, 'rb') as f:
 				x_train, y_train, x_test, y_test = pickle.load(f)
 		else:
-			print('ERROR Data file %s does not exist - implement generator' % (data_path))
-			# Generate data
-			# Save them to pickle
+			d_train, d_val, d_test = self.get_all_days_lists()
+			x_train, y_train = self.build_feature_vector(d_train+d_val, without_reserved, normalize)
+			x_test, y_test = self.build_feature_vector(d_test, without_reserved, normalize)
+			data = [x_train, y_train, x_test, y_test]
+			with open(data_path, 'wb') as f:
+					pickle.dump(data, f)
 
 		return x_train, y_train, x_test, y_test
 
-	def build_feature_vector(days_list, without_reserved=False, normalize=False):
+	def build_feature_vector(self, days_list, without_reserved=False, normalize=False):
 		x = list()
 		y = list()
 		for day in days_list:
-			if without_reserved:
+			if self.without_reserved or without_reserved:
 				x_day, y_day = day.build_timeseries_without_reservations(3, normalize)
 			else:
 				x_day, y_day = day.build_timeseries(3, normalize)
@@ -186,7 +190,7 @@ class Model(ABC):
 		if predictor == None:
 			predictor = self.model
 
-		if without_reserved:
+		if self.without_reserved or without_reserved:
 			x, y = day.build_timeseries_without_reservations()
 		else:
 			x, y = day.build_timeseries()
