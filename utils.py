@@ -1,6 +1,12 @@
 import datetime
 import numpy as np
-
+import inspect
+import itertools
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.metrics import mean_squared_error
+from models.random_forest_classifier import RandomForest
+import pickle
 
 class WeatherData(object):
 	"""
@@ -237,3 +243,74 @@ class Day(object):
 
 	def __repr__(self):
 		return 'ts: %s, %d - %d - %d - %d' % (self.ts.strftime('%Y-%m-%d %H:%M:%S'), self.begin_index, self.open_index, self.close_index, self.end_index)
+
+class MyGridSearch:
+	def __init__(self, estimator_name, param_dict):
+		inspector = inspect.getargspec(eval(estimator_name))
+		for key in param_dict.keys():
+			assert key in inspector.args, 'Argument %s is not valid for class %s' % (key, estimator.__class__.__name__)
+
+		self.estimator_name = estimator_name
+		self.param_dict = param_dict
+		self.evaluation = []
+		self.parameters = []
+		self.best_parameters = None
+		self.best_evaluation = None
+		self.best_estimator = None
+		self.arguments = None
+		self.generator = None
+		self.grid_size = 1
+		self.prepare_generator()
+		self.utils_model = RandomForest()
+
+	def fit(self):
+		n = 1
+		x_train, y_train, _, _= self.utils_model.load_data()
+		for values in self.generator:
+			params = {}
+			estimator_str = self.estimator_name + '('
+			for i in range(len(self.arguments)):
+				estimator_str += self.arguments[i] + '=' + str(values[i]) + ', '
+				params[self.arguments[i]] = values[i]
+			estimator_str = estimator_str[:-2] + ')'
+
+			self.parameters.append(params)
+			e = eval(estimator_str)
+			e.fit(x_train, y_train)
+			# y_prediction = e.predict(x_test)
+			# score = mean_squared_error(y_test, y_prediction)
+			score = self.utils_model.get_testing_mse(e)
+
+			if len(self.evaluation) == 0 or score < min(self.evaluation):
+				self.best_evaluation = score
+				self.best_estimator = e
+				self.best_parameters = params
+
+			self.evaluation.append(score)
+			print('%d out of %d done for parameters %s with score %.3f, best MSE so far = %.3f' % (n, self.grid_size, estimator_str, score, self.best_evaluation))
+			n +=1 
+		print('GridSearch for %s done.\nBest MSE = %.3f for parameters:' % (self.estimator_name, self.best_evaluation))
+		print(self.best_parameters)
+		print('Saving best estimator')
+		est_path = 'data/%s_MyGridSearch_MSE_%.3f.pickle' % (self.estimator_name, self.best_evaluation)
+		with open('data/RandomForestClassifier_RandomSearch.pickle', 'wb') as f:
+			pickle.dump(self.best_estimator, f)
+
+	def prepare_generator(self):
+		self.arguments = list()
+		product_str = 'itertools.product(['
+		for key, value in self.param_dict.items():
+			self.grid_size *= len(value)
+			self.arguments.append(key)
+			for element in value:
+				product_str += str(element) + ', '
+			product_str = product_str[:-2] + '], ['
+		product_str = product_str[:-3] + ')'
+		self.generator = eval(product_str)
+
+class Helper:
+	def __init__(self, a=1, b=2, c=3):
+		print(a)
+		print(b)
+		print(c)
+		self.c = 'ahoj'
