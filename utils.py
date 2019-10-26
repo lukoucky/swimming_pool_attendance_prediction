@@ -112,25 +112,36 @@ class Day(object):
 		self.data = None
 		self.timeseries_export_ignore = ['time', 'humidity', 'pressure']
 
-	def data_frame_to_timeseries_numpy(self, data, time_step=3):
+	def data_frame_to_timeseries_numpy(self, data, time_step_back=3, time_stap_forward=1):
 		"""
 		Creates vector of prediction results and features.
 		:param data: DataFrame 
-		:param time_step: Number of time stamps packed together as input features
+		:param time_step_back: Number of time stamps packed together as input features
 		:return: Two numpy arrays with features and results
 		"""
-		matrix = data.to_numpy()
-		# matrix = data.values
-		dim_0 = matrix.shape[0] - time_step
+		matrix = data.values
+		dim_0 = matrix.shape[0] - time_step_back
 		dim_1 = matrix.shape[1]
 
-		x = np.zeros((dim_0, time_step*dim_1))
-		y = np.zeros((dim_0,))
+		x = np.zeros((dim_0, time_step_back*dim_1))
+		y = np.zeros((dim_0, time_stap_forward))
 		
 		for i in range(dim_0):
-			x_data = matrix[i:time_step+i]
-			x[i] = np.reshape(x_data,x_data.shape[0]*x_data.shape[1])
-			y[i] = matrix[time_step+i, 0]
+			x_data = matrix[i:time_step_back+i]
+			x[i] = np.reshape(x_data, x_data.shape[0]*x_data.shape[1])
+
+			end_id = time_step_back+i+time_stap_forward
+			if end_id >= dim_0:
+				end_id = dim_0 - 1
+
+			y_data = matrix[time_step_back+i:end_id, 0]
+			if len(y_data) < time_stap_forward:
+				y_provis = np.zeros(time_stap_forward,)
+				for i, value in enumerate(y_data):
+					y_provis[i] = value
+				y[i] = y_provis
+			else:
+				y[i] = np.reshape(y_data, time_stap_forward)
 
 		return x, y
 

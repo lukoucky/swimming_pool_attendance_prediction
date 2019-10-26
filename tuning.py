@@ -1,6 +1,7 @@
 from models.random_forest_classifier import RandomForest
 from utils import MyGridSearch
 from sklearn.ensemble import RandomForestClassifier
+from utils import Day
 
 def tune_random_forest():
 	max_depth = [10, 50] 
@@ -20,7 +21,11 @@ def tune_random_forest():
 if __name__ == '__main__':
 	rf = RandomForest()
 	rf.without_reserved = True
-	rf.fit()
-	rf.save_model('data/rfc_nores.pickle')
-	rf.show_n_days_prediction(12)
-	print(rf.get_testing_mse())
+	# rf.fit()
+	# rf.save_model('data/rfc_nores.pickle')
+	# rf.show_n_days_prediction(12)
+	# print(rf.get_testing_mse())
+
+	d_train, d_val, d_test = rf.get_all_days_lists()
+	x,y = d_test[20].build_timeseries(8)
+	print(x[100], y[100])
