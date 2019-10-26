@@ -263,9 +263,10 @@ class MyGridSearch:
 		self.prepare_generator()
 		self.utils_model = RandomForest()
 
-	def fit(self):
+	def fit(self, without_reserved=False):
 		n = 1
-		x_train, y_train, _, _= self.utils_model.load_data()
+		self.utils_model.without_reserved = without_reserved
+		x_train, y_train, _, _= self.utils_model.load_data(without_reserved)
 		for values in self.generator:
 			params = {}
 			estimator_str = self.estimator_name + '('
@@ -277,8 +278,6 @@ class MyGridSearch:
 			self.parameters.append(params)
 			e = eval(estimator_str)
 			e.fit(x_train, y_train)
-			# y_prediction = e.predict(x_test)
-			# score = mean_squared_error(y_test, y_prediction)
 			score = self.utils_model.get_testing_mse(e)
 
 			if len(self.evaluation) == 0 or score < min(self.evaluation):
@@ -307,10 +306,3 @@ class MyGridSearch:
 			product_str = product_str[:-2] + '], ['
 		product_str = product_str[:-3] + ')'
 		self.generator = eval(product_str)
-
-class Helper:
-	def __init__(self, a=1, b=2, c=3):
-		print(a)
-		print(b)
-		print(c)
-		self.c = 'ahoj'
