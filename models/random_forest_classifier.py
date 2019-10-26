@@ -10,7 +10,7 @@ import os
 class RandomForest(Model):
 
 	def __init__(self):
-		super().__init__(RandomForestClassifier())
+		super().__init__(RandomForestClassifier(n_estimators=20, max_features=20, max_depth=50, min_samples_split=5, min_samples_leaf=1))
 
 	def tune_parameters(self, data_x, data_y):
 		# bootstrap = [True, False]
@@ -41,8 +41,10 @@ class RandomForest(Model):
 		with open('data/RandomForestClassifier_RandomSearch.pickle', 'wb') as f:
 			pickle.dump(self.random_param_search, f)
 
-	def fit(self, data):
-		pass
+	def fit(self, without_reserved=False):
+		x_train, y_train, x_test, y_test = self.load_data(without_reserved)
+		self.model.fit(x_train, y_train)
+		self.are_parameters_tuned = True
 
 	def predict(self, data):
 		pass
@@ -53,3 +55,12 @@ class RandomForest(Model):
 		with open(pickle_path, 'rb') as f:
 			self.random_param_search = pickle.load(f)
 		self.are_parameters_tuned = True
+
+	def load_model(self, pickle_path='data/rfc.pickle'):
+		with open(pickle_path, 'rb') as f:
+			self.model = pickle.load(f)
+		self.are_parameters_tuned = True
+
+	def save_model(self, pickle_path='data/rfc.pickle'):
+		with open(pickle_path, 'wb') as f:
+			pickle.dump(self.model, f)
