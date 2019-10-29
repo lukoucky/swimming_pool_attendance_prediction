@@ -2,6 +2,7 @@ import datetime
 import numpy as np
 import inspect
 import itertools
+import copy
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.metrics import mean_squared_error
@@ -317,3 +318,49 @@ class MyGridSearch:
 			product_str = product_str[:-2] + '], ['
 		product_str = product_str[:-3] + ')'
 		self.generator = eval(product_str)
+
+
+class DaysStatistics:
+	def __init__(self, days_list):
+		self.days = days_list
+		self.averages = list()
+		self.generate_averages()
+		# TODO make difference between weekdays and weekends
+
+
+	def generate_averages(self):
+		for month in range(12):
+			self.averages.append([])
+			for i in range(288):
+				self.averages[month].append(0)
+
+		n = copy.deepcopy(self.averages)
+		sums = copy.deepcopy(self.averages)
+		for day in self.days:
+			for index, row in day.data.iterrows():
+				month = row['month']-1
+				day_id = self.get_list_id(row['hour'], row['minute'])
+				sums[month][day_id] += row['pool']
+				n[month][day_id] += 1
+
+		for month in range(12):
+			for i in range(288):
+				if n[month][i] > 0:
+					self.averages[month][i] = sums[month][i]/n[month][i]
+
+	def get_average_for_month(self, month):
+		return self.averages[month]
+
+	def get_month_average_for_time(self, month, hour, minute):
+		day_id = self.get_list_id(hour, minute)
+		return self.averages[month][day_id]
+
+	def get_average_for_last_days(self, n_days, month, day, hour, minute):
+		pass 
+
+	def get_average_for_last_days_at_time(self, n_days, month, day, hour, minute):
+		pass 
+
+	def get_list_id(self, hour, minute):
+		return hour*12 + minute//5
+
