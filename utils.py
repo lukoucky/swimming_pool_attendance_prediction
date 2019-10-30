@@ -6,7 +6,7 @@ import copy
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.metrics import mean_squared_error
-from models.random_forest_classifier import RandomForest
+# from models.random_forest_classifier import RandomForest
 import pickle
 import matplotlib.pyplot as plt
 import os
@@ -275,7 +275,11 @@ class MyGridSearch:
 		self.generator = None
 		self.grid_size = 1
 		self.prepare_generator()
-		self.utils_model = RandomForest()
+		#
+		# TODO - get following line back
+		#
+
+		# self.utils_model = RandomForest()
 
 	def fit(self, without_reserved=False):
 		n = 1

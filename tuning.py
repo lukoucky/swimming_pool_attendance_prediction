@@ -23,11 +23,12 @@ def tune_random_forest():
 if __name__ == '__main__':
 	rf = RandomForest()
 	d_train, d_val, d_test = rf.get_all_days_lists()
-	rf.build_feature_vector_with_average(d_train)
+	x,y = rf.build_feature_vector_with_average(d_train+d_val)
 	# rf.without_reserved = True
-	# rf.fit() 
-	# rf.save_model('data/rfc_nores.pickle')
-	# rf.show_n_days_prediction(12)
+	rf.model.fit(x, y)
+	rf.are_parameters_tuned = True
+	rf.save_model('data/rfc_with_avg.pickle')
+	rf.show_n_days_prediction(12)
 	# print(rf.get_testing_mse())
 
 	# d_train, d_val, d_test = rf.get_all_days_lists()

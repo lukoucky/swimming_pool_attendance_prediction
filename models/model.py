@@ -225,7 +225,11 @@ class Model(ABC):
 				data[0] = y_pred[-3]
 				data[int(x.shape[1]/3)] = y_pred[-2]
 				data[int((x.shape[1]/3)*2)] = y_pred[-1]
-			prediction = predictor.predict([data])
+			########
+			# TODO remove following line - works only for monthly average in feature
+			#########
+			pred_data = np.append(data,[self.get_monthly_average_for_feature(data)])
+			prediction = predictor.predict([pred_data])
 			y_pred.append(prediction[0])
 		return y_pred
 
