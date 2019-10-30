@@ -372,6 +372,12 @@ class DaysStatistics:
 		else:
 			return self.averages_weekday[month]
 
+	def get_average_for_month_at_time(self, month, hour, minute, weekend):
+		if weekend:
+			return self.averages_weekend[month][self.get_list_id(hour, minute)]
+		else:
+			return self.averages_weekday[month][self.get_list_id(hour, minute)]
+
 	def get_month_average_for_time(self, month, hour, minute):
 		day_id = self.get_list_id(hour, minute)
 		return self.averages_weekday[month][day_id]

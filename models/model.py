@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error, make_scorer
 import matplotlib.pyplot as plt
 import random
-
+from utils import DaysStatistics
 
 class Model(ABC):
 	def __init__(self, classificator):
@@ -14,6 +14,8 @@ class Model(ABC):
 		self.random_param_search = None
 		self.are_parameters_tuned = False
 		self.without_reserved = False
+		d_train, d_val, d_test = self.get_all_days_lists()
+		self.days_stats = DaysStatistics(d_train + d_val)
 
 	@abstractmethod
 	def fit(self, without_reserved=False):
@@ -79,11 +81,25 @@ class Model(ABC):
 
 	def build_feature_vector_with_average(self, days_list, without_reserved=False, normalize=False):
 		x, y = self.build_feature_vector(days_list, without_reserved, normalize)
-		for row in x:
-			print(row)
-			break
+		montly_averages = np.zeros((x.shape[0],1))
+		for i, row in enumerate(x):
+			montly_averages[i] = self.get_monthly_average_for_feature(row)
 
+		new_x = np.concatenate((x, montly_averages),  axis=1)
+		return new_x, y
 
+	def get_monthly_average_for_feature(self, row):
+		hour = int(row[-51])
+		minute = int(row[-50]) + 5
+
+		weekend = False
+		if int(row[-54]) > 4:
+			weekend = True
+
+		if minute > 60:
+			minute -= 60
+			hour += 1
+		return self.days_stats.get_average_for_month_at_time(int(row[-53])-1, hour, minute, weekend)
 
 	def shuffle_date(self, x, y):
 		if len(x) == len(y):
