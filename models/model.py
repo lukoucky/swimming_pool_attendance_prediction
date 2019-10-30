@@ -77,6 +77,14 @@ class Model(ABC):
 
 		return x_data, y_data
 
+	def build_feature_vector_with_average(self, days_list, without_reserved=False, normalize=False):
+		x, y = self.build_feature_vector(days_list, without_reserved, normalize)
+		for row in x:
+			print(row)
+			break
+
+
+
 	def shuffle_date(self, x, y):
 		if len(x) == len(y):
 			p = np.random.RandomState(seed=17).permutation(len(x))
