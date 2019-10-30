@@ -22,16 +22,27 @@ def tune_random_forest():
 
 if __name__ == '__main__':
 	rf = RandomForest()
+	d_train, d_val, d_test = rf.get_all_days_lists()
+	rf.build_feature_vector_with_average(d_train)
 	# rf.without_reserved = True
-	# rf.fit()
+	# rf.fit() 
 	# rf.save_model('data/rfc_nores.pickle')
 	# rf.show_n_days_prediction(12)
 	# print(rf.get_testing_mse())
 
-	d_train, d_val, d_test = rf.get_all_days_lists()
-	ds = DaysStatistics(d_train + d_val + d_test)
-	for i in range(12):
-		l = ds.get_average_for_month(i)
-		plt.figure()
-		plt.plot(l)
-		plt.show()
+	# d_train, d_val, d_test = rf.get_all_days_lists()
+	# ds = DaysStatistics(d_train + d_val + d_test)
+
+	# day_id = 63
+	# d = list(d_train[day_id].data['pool'])
+	# month = d_train[day_id].data.iloc[0]['month']
+	# day_of_week = d_train[day_id].data.iloc[0]['day_of_week']
+	# weekend = False
+	# offset = 48
+	# if day_of_week > 4:
+	# 	weekend = True
+	# 	offset = 96
+	# ds.plot_monthly_average(month-1, weekend, d, offset)
+
+	# ds.plot_year_averages_by_month(True)
+	# ds.plot_year_averages_by_month(False)
