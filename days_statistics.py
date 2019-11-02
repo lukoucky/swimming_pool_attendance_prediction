@@ -122,3 +122,41 @@ class DaysStatistics:
 		ax.grid(True)
 		ax.set_ylim([0,300])
 		plt.show()
+
+	def generate_organisation_addition(self):
+		reserved_columns = list()
+		total_attandance = list()
+		n = list()
+		for column in self.days[0].data.columns:
+			if column.startswith('reserved_'):
+				reserved_columns.append(column)
+				total_attandance.append(0)
+				n.append(0)
+
+		for day in self.days:
+			for index, row in day.data.iterrows():
+				for i, column in enumerate(reserved_columns):
+					if int(row[column]) > 0:
+						weekend = True
+						if int(row['day_of_week']) < 5:
+							weekend = False
+						total_attandance[i] += row['pool'] - self.get_average_for_month_at_time(int(row['month'])-1, int(row['hour']), int(row['minute']), weekend)
+						n[i] += 1
+
+		self.org_addition = dict()
+		for i, column in enumerate(reserved_columns):
+			if n[i] > 0:
+				self.org_addition[column] = total_attandance[i]/n[i]
+			else:
+				self.org_addition[column] = 0
+
+
+if __name__ == '__main__':
+	with open('data/days.pickle', 'rb') as input_file:
+		d1,d2,d3 = pickle.load(input_file)
+
+	ds = DaysStatistics()
+	ds.days = d1+d2
+	ds.generate_organisation_addition()
+	print(ds.org_addition)
+
