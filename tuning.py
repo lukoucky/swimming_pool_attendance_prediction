@@ -1,9 +1,11 @@
-from models.random_forest_classifier import RandomForest
+# from models.random_forest_classifier import RandomForest
 from utils import MyGridSearch
 from sklearn.ensemble import RandomForestClassifier
-from utils import Day, DaysStatistics
+# from utils import Day, DaysStatistics
 import matplotlib.pyplot as plt
 
+from data_helper import DataHelper
+from days_statistics import DaysStatistics
 
 def tune_random_forest():
 	max_depth = [10, 50] 
@@ -21,14 +23,14 @@ def tune_random_forest():
 	mgs.fit(True)
 
 if __name__ == '__main__':
-	rf = RandomForest()
-	d_train, d_val, d_test = rf.get_all_days_lists()
-	x,y = rf.build_feature_vector_with_average(d_train+d_val)
-	# rf.without_reserved = True
-	rf.model.fit(x, y)
-	rf.are_parameters_tuned = True
-	rf.save_model('data/rfc_with_avg.pickle')
-	rf.show_n_days_prediction(12)
+	# rf = RandomForest()
+	# d_train, d_val, d_test = rf.get_all_days_lists()
+	# x,y = rf.build_feature_vector_with_average(d_train+d_val)
+	# # rf.without_reserved = True
+	# rf.model.fit(x, y)
+	# rf.are_parameters_tuned = True
+	# rf.save_model('data/rfc_with_avg.pickle')
+	# rf.show_n_days_prediction(12)
 	# print(rf.get_testing_mse())
 
 	# d_train, d_val, d_test = rf.get_all_days_lists()
@@ -46,4 +48,12 @@ if __name__ == '__main__':
 	# ds.plot_monthly_average(month-1, weekend, d, offset)
 
 	# ds.plot_year_averages_by_month(True)
+	# ds.plot_year_averages_by_month(False)
+	dh = DataHelper()
+	columns = ['pool','day_of_week','month','hour','minute'] 
+	time_step_back = 3
+	x_train, y_train, x_test, y_test = dh.generate_feature_vectors(columns, time_step_back)
+	ds = DaysStatistics()
+	ds.days = dh.get_all_days_list()
+	ds.generate_averages(pickle_path='data/days_statistics2.pickle', override_pickle=True)
 	# ds.plot_year_averages_by_month(False)
