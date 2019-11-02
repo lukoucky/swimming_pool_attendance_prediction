@@ -4,14 +4,30 @@ import pickle
 import os
 
 class MonthlyAverageClassifier():
+	"""
+	Monthly average classifier. Using DaysStatistics to compute average
+	attance for each month. Each monthly average is also split to two
+	averages - one for weekend and one for weekday.
+	"""
 	def __init__(self):
+		"""
+		MonthlyAverageClassifier constructor.
+		"""
 		self.ds = DaysStatistics()
 		self.columns = None
 		self.time_steps_back = 3
 
 	def fit(self, days_list, columns=None, time_steps_back=3):
+		"""
+		Fits MonthlyAverageClassifier. Fitting is done by generating monthly averages
+		from training dataset in DaysStatistics class.
+		:param days_list: List of days that should be used for average computation
+		:param columns: List of columns that should remain in generated features. Deafult is None, when 
+                        all columns appart from `time` remains.
+        :param time_step_back: Number of time stamps in history that are packed together as input features
+        """
 		self.ds.days = days_list
-		self.ds.generate_averages('data/monthly_avg_classifier_days_statistics.pickle', True)
+		self.ds.generate_averages('data/monthly_avg_classifier_days_statistics.pickle', False)
 		self.columns = columns
 		self.time_steps_back = time_steps_back
 
@@ -31,9 +47,13 @@ class MonthlyAverageClassifier():
 			self.minute_id = -50
 			self.day_of_week_id = -54
 
-		self.ds.plot_year_averages_by_month(True)
-
 	def predict(self, x):
+		"""
+		Predicts future attandance one step into to the future.
+		So far works only for single feature input.
+		:param x: Input feature vector
+		:return: One step into future prediction
+		"""
 		row = x[0]
 		hour = int(row[self.hour_id])
 		minute = int(row[self.minute_id]) + 5
@@ -48,21 +68,3 @@ class MonthlyAverageClassifier():
 		y_pred = self.ds.get_average_for_month_at_time(int(row[self.month_id])-1, hour, minute, weekend)
 		return [y_pred]
 
-	# def predict(self, x):
-	# 	x = x[0]
-	# 	print(x)
-	# 	print(len(x.shape))
-	# 	y_pred = np.zeros(x.shape[0], 1)
-	# 	for i, row in enumerate(x):
-	# 		hour = int(row[self.hour_id])
-	# 		minute = int(row[self.minute_id]) + 5
-	# 		if minute > 59:
-	# 			hour += 1
-	# 			minute -= 60
-
-	# 		print('ids', self.month_id, self.hour_id, self.minute_id)
-	# 		print('Predicting for ',int(row[self.month_id]), hour, minute)
-	# 		y_pred[i] = self.ds.get_month_average_for_time(int(row[self.month_id])-1, hour, minute)
-	# 		print(y_pred)
-	# 		print('\n\n')
-	# 	return y_pred.ravel()
