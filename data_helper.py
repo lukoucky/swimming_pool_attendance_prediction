@@ -319,3 +319,25 @@ class DataHelper():
             l1, = plt.plot(y)
             l2, = plt.plot(y_pred)
         plt.show()
+
+    def plot_days(self, days_list):
+        """
+        Plots all days attandance from `days_list`.
+        :param days_list: List of days to plot
+        """
+        n_days = len(days_list)
+        rows = n_days//2
+        columns = 2
+        if n_days == 1:
+            rows = 1
+            columns = 1
+
+        fig = plt.figure(figsize=(19,4*rows))
+        for i, day in enumerate(days_list):
+            x, y = self.get_feature_vectors_from_days([day],['time'])
+            ax = fig.add_subplot(rows, columns, i+1)
+            ax.title.set_text('Day %d' % (i))
+            l1, = plt.plot(y)
+        plt.show()
+
+
