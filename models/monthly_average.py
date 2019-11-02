@@ -1,68 +1,68 @@
-from models.model import Model
-from sklearn.metrics import mean_squared_error
+from days_statistics import DaysStatistics
 import numpy as np
 import pickle
 import os
 
-class MonthlyAverage():
+class MonthlyAverageClassifier():
 	def __init__(self):
-		super().__init__(MyAverageModel())
+		self.ds = DaysStatistics()
+		self.columns = None
+		self.time_steps_back = 3
 
-	@abstractmethod
-	def fit(self, without_reserved=False):
-		pass
+	def fit(self, days_list, columns=None, time_steps_back=3):
+		self.ds.days = days_list
+		self.ds.generate_averages('data/monthly_avg_classifier_days_statistics.pickle', True)
+		self.columns = columns
+		self.time_steps_back = time_steps_back
 
-	@abstractmethod
-	def predict(self, data):
-		pass
+		if columns is not None:
+			for i, name in enumerate(self.columns):
+				if name == 'month':
+					self.month_id = - len(self.columns) + i
+				if name == 'hour':
+					self.hour_id = - len(self.columns) + i
+				if name == 'minute':
+					self.minute_id = - len(self.columns) + i
+				if name == 'day_of_week':
+					self.day_of_week_id = - len(self.columns) + i
+		else:
+			self.month_id = -53
+			self.hour_id = -51
+			self.minute_id = -50
+			self.day_of_week_id = -54
 
-	@abstractmethod
-	def tune_parameters(self, data_x, data_y):
-		pass
-
-	@abstractmethod
-	def load_tuned_parameters(self, pickle_path=None):
-		pass
-
-class MyAverageModel():
-	"""
-	Average model that implements functions called by base class Model
-	"""
-	def __init__(self):
-		self.averages_weekday = list()
-		self.averages_weekend = list()
-		self.fitted = False
-
-	def fit(self, days_list):
-		for month in range(12):
-			self.averages_weekday.append([])
-			for i in range(288):
-				self.averages_weekday[month].append(0)
-
-		self.averages_weekend = copy.deepcopy(self.averages_weekday)
-		n_weekday = copy.deepcopy(self.averages_weekday)
-		sums_weekday = copy.deepcopy(self.averages_weekday)
-		n_weekend = copy.deepcopy(self.averages_weekday)
-		sums_weekend = copy.deepcopy(self.averages_weekday)
-		for day in days_list:
-			for index, row in day.data.iterrows():
-				month = row['month']-1
-				day_id = self.get_list_id(row['hour'], row['minute'])
-				if row['day_of_week'] < 5:
-					sums_weekday[month][day_id] += row['pool']
-					n_weekday[month][day_id] += 1
-				else:
-					sums_weekend[month][day_id] += row['pool']
-					n_weekend[month][day_id] += 1
-
-		for month in range(12):
-			for i in range(288):
-				if n_weekday[month][i] > 0:
-					self.averages_weekday[month][i] = sums_weekday[month][i]/n_weekday[month][i]
-				if n_weekend[month][i] > 0:
-					self.averages_weekend[month][i] = sums_weekend[month][i]/n_weekend[month][i]
-
-		self.fitted = True
+		self.ds.plot_year_averages_by_month(True)
 
 	def predict(self, x):
-		pass
+		row = x[0]
+		hour = int(row[self.hour_id])
+		minute = int(row[self.minute_id]) + 5
+		if minute > 59:
+			hour += 1
+			minute -= 60
+
+		weekend = False
+		if int(row[self.day_of_week_id]) > 4:
+			weekend = True
+
+		y_pred = self.ds.get_average_for_month_at_time(int(row[self.month_id])-1, hour, minute, weekend)
+		return [y_pred]
+
+	# def predict(self, x):
+	# 	x = x[0]
+	# 	print(x)
+	# 	print(len(x.shape))
+	# 	y_pred = np.zeros(x.shape[0], 1)
+	# 	for i, row in enumerate(x):
+	# 		hour = int(row[self.hour_id])
+	# 		minute = int(row[self.minute_id]) + 5
+	# 		if minute > 59:
+	# 			hour += 1
+	# 			minute -= 60
+
+	# 		print('ids', self.month_id, self.hour_id, self.minute_id)
+	# 		print('Predicting for ',int(row[self.month_id]), hour, minute)
+	# 		y_pred[i] = self.ds.get_month_average_for_time(int(row[self.month_id])-1, hour, minute)
+	# 		print(y_pred)
+	# 		print('\n\n')
+	# 	return y_pred.ravel()
