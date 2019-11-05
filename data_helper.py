@@ -161,6 +161,36 @@ class DataHelper():
 
         return x_train, y_train, x_test, y_test
     
+    def generate_feature_vectors_for_hmm(self, columns_to_keep=None):
+        """
+        Creates training and testing feature vectors and vectors with results.
+        :param columns_to_keep: List of columns that should remain in generated features. Deafult is None, when 
+                                all columns appart from `time` remains.
+        :param time_step_back: Number of time stamps in history that are packed together as input features
+        :param time_steps_forward: Number of time stamps in future that are packed together as output results
+        :return: Four numpy arrays with structure: train_features, train_results, test_features, test_results
+        """
+        columns_to_drop = list()
+        if columns_to_keep is not None:
+            for column in self.get_all_columns_names():
+                if column not in columns_to_keep:
+                    columns_to_drop.append(column)
+        else:
+            columns_to_drop = ['time']
+        
+        x_lengths = []
+        for i, day in enumerate(self.get_training_days(True)):
+            if i  == 0:
+                x_train, y_train = self.get_feature_vectors_from_days([day], columns_to_drop, 1, 1)
+                x_lengths.append(len(x_train))
+            else:
+                new_x, new_y = self.get_feature_vectors_from_days([day], columns_to_drop, 1, 1)
+                x_train = np.concatenate([x_train, new_x])
+                x_lengths.append(len(new_x))
+        # x_test, y_test = self.get_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, 1, 1)
+
+        return x_train, x_lengths
+
     def build_timeseries(self, data_frame, time_steps_back=3, time_steps_forward=1):
         """
         Creates vector of prediction results and features.
