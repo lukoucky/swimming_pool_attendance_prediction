@@ -87,7 +87,6 @@ $( "#datepicker" ).change(function() {
   console.log("datepicker change to "+document.getElementById('datepicker').value);
   var today = picker.toString('YYYY-MM-DD');
   var csv_url = 'data/'+today+'.csv';
-  config.options.title.text = 'Occupancy of SUTKA pool '+today;
   resetCanvas();
   updateChart(today);
 });
@@ -121,11 +120,11 @@ function updateChart(date_string){
             data = $.csv.toArrays(response);
             generateChart(data, config);
             console.log(window.myLine.data.datasets.length);
-            addDataFromCSV('data/test/prediction_algo1/2019-11-01.csv', 'rgba(249, 200, 14,0.9)', 'Monthly Average');
-            addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Classifier\nMSE = 736');
-            addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(102, 46, 155,0.9)', 'Extra Trees Classifier');
-            addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(67, 175, 105,0.9)', 'Hidden Markov Model');
-            addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(14,124,123,0.9)', 'Long Short Term Memory');
+            addDataFromCSV('data/prediction_monthly_average/'+date_string+'.csv', 'rgba(67, 175, 105,0.9)', 'Monthly Average');
+            addDataFromCSV('data/prediction_extra_tree/'+date_string+'.csv', 'rgba(102, 46, 155,0.9)', 'Extra Trees Classifier');
+            // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Classifier\nMSE = 736');
+            // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(67, 175, 105,0.9)', 'Hidden Markov Model');
+            // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(14,124,123,0.9)', 'Long Short Term Memory');
         }   
     });  
 
