@@ -342,10 +342,11 @@ class DataHelper():
 
         fig = plt.figure(figsize=(19,5*rows))
         for i, day_id in enumerate(days_list_indices):
+            day_date = days_list[day_id].data['time'].iloc[0][:10]
             x, y = self.get_test_day_feature_vectors(day_id, columns_to_keep, time_steps_back)
             y_pred = self.predict_day_from_features(x, predictor, time_steps_back)
             ax = fig.add_subplot(rows, columns, i+1)
-            ax.title.set_text('Day %d - mse=%.0f' % (day_id, mean_squared_error(y_pred, y)))
+            ax.title.set_text('Day %d (%s) - mse=%.0f' % (day_id, day_date, mean_squared_error(y_pred, y)))
             l1, = plt.plot(y)
             l2, = plt.plot(y_pred)
         plt.show()
@@ -363,11 +364,15 @@ class DataHelper():
             columns = 1
 
         fig = plt.figure(figsize=(19,4*rows))
+        img_id = 1
         for i, day in enumerate(days_list):
-            x, y = self.get_feature_vectors_from_days([day],['time'])
-            ax = fig.add_subplot(rows, columns, i+1)
-            ax.title.set_text('Day %d' % (i))
-            l1, = plt.plot(y)
+            day_date = day.data['time'].iloc[0][:10]
+            if day_date.startswith('2019'):
+                x, y = self.get_feature_vectors_from_days([day],['time'])
+                ax = fig.add_subplot(rows+1, columns, img_id)
+                ax.title.set_text('Day %d - %s' % (i, day_date))
+                l1, = plt.plot(y)
+                img_id += 1
         plt.show()
 
 
