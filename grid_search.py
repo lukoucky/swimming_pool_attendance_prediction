@@ -60,6 +60,7 @@ class MyGridSearch:
         """
         n = 1
         x_train, y_train, x_test, y_test = self.dh.generate_feature_vectors(columns_to_keep, time_step_back)
+        # x_train, y_train, x_test, y_test = self.dh.generate_normalized_feature_vectors(columns_to_keep, time_step_back)
         for values in self.generator:
             params = {}
             estimator_str = self.estimator_name + '(random_state=17, '
