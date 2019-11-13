@@ -112,6 +112,24 @@ class DataHelper():
             y.append(y_day)
         return self.reformat_feature_list(x, y)
     
+    def get_normalized_feature_vectors_from_days(self, days_list, columns_to_drop, time_steps_back=3, time_steps_forward=1):
+        """
+        Creates feature vector and vector with results from Day object using normalized data.
+        :param days_list: List of Days from which are features generated
+        :param columns_to_drop: List of columns that should be droped from DataFrame in Day.
+        :param time_step_back: Number of time stamps in history that are packed together as input features
+        :param time_steps_forward: Number of time stamps in future that are packed together as output results
+        :return: Two numpy arrays with features and results
+        """
+        x, y = list(), list()
+        for day in days_list:
+            clean_data = day.get_normalized_data()
+            clean_data.drop(columns=columns_to_drop, inplace=True)
+            x_day, y_day = self.build_timeseries(clean_data, time_steps_back, time_steps_forward)
+            x.append(x_day)
+            y.append(y_day)
+        return self.reformat_feature_list(x, y)
+
     def get_test_day_feature_vectors(self, day_id, columns_to_keep=None, time_steps_back=3, time_steps_forward=1):
         """
         Generates feature and results vector for one testing Day.
@@ -138,6 +156,27 @@ class DataHelper():
             print('get_test_day_feature_vectors - requested day ID %d that is out of bounds. There are %d testing days.' % (day_id, n_testing_days))
             return None, None
 
+    def generate_normalized_feature_vectors(self, columns_to_keep=None, time_steps_back=3, time_steps_forward=1):
+        """
+        Creates normalized training and testing feature vectors and vectors with results.
+        :param columns_to_keep: List of columns that should remain in generated features. Deafult is None, when 
+                                all columns appart from `time` remains.
+        :param time_step_back: Number of time stamps in history that are packed together as input features
+        :param time_steps_forward: Number of time stamps in future that are packed together as output results
+        :return: Four numpy arrays with structure: train_features, train_results, test_features, test_results
+        """
+        columns_to_drop = list()
+        if columns_to_keep is not None:
+            for column in self.get_all_columns_names():
+                if column not in columns_to_keep:
+                    columns_to_drop.append(column)
+        else:
+            columns_to_drop = ['time']
+        
+        x_train, y_train = self.get_normalized_feature_vectors_from_days(self.get_training_days(True), columns_to_drop, time_steps_back, time_steps_forward)
+        x_test, y_test = self.get_normalized_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, time_steps_back, time_steps_forward)
+
+        return x_train, y_train, x_test, y_test
     
     def generate_feature_vectors(self, columns_to_keep=None, time_steps_back=3, time_steps_forward=1):
         """
@@ -190,6 +229,28 @@ class DataHelper():
         # x_test, y_test = self.get_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, 1, 1)
 
         return x_train, x_lengths
+
+    def generate_feature_vectors_for_cnn(self, columns_to_keep=None, time_steps_back=3, time_steps_forward=1):
+        """
+        Creates training and testing feature vectors and vectors with results for CNN
+        :param columns_to_keep: List of columns that should remain in generated features. Deafult is None, when 
+                                all columns appart from `time` remains.
+        :param time_step_back: Number of time stamps in history that are packed together as input features
+        :param time_steps_forward: Number of time stamps in future that are packed together as output results
+        :return: Four numpy arrays with structure: train_features, train_results, test_features, test_results
+        """
+        columns_to_drop = list()
+        if columns_to_keep is not None:
+            for column in self.get_all_columns_names():
+                if column not in columns_to_keep:
+                    columns_to_drop.append(column)
+        else:
+            columns_to_drop = ['time']
+        
+        x_train, y_train = self.get_feature_vectors_from_days(self.get_training_days(True), columns_to_drop, time_steps_back, time_steps_forward)
+        x_test, y_test = self.get_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, time_steps_back, time_steps_forward)
+
+        return x_train, y_train, x_test, y_test
 
     def build_timeseries(self, data_frame, time_steps_back=3, time_steps_forward=1):
         """

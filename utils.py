@@ -207,7 +207,9 @@ class Day(object):
 		df['day'] = df['day']/31
 		df['hour'] = df['hour']/24
 		df['minute'] = df['minute']/60
-
+		df['minute_of_day'] = df['minute_of_day']/1440
+		df['year'] = (df['year']-2015)/10
+		
 		for column in self.data.columns:
 			if column.startswith('reserved_'):
 				df[column] = df[column]/8
