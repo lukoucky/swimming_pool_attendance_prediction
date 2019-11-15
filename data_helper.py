@@ -239,16 +239,21 @@ class DataHelper():
         :param time_steps_forward: Number of time stamps in future that are packed together as output results
         :return: Four numpy arrays with structure: train_features, train_results, test_features, test_results
         """
+
         columns_to_drop = list()
         if columns_to_keep is not None:
+            n_features = len(columns_to_keep)
             for column in self.get_all_columns_names():
                 if column not in columns_to_keep:
                     columns_to_drop.append(column)
         else:
             columns_to_drop = ['time']
+            n_features = len(self.get_all_columns_names())
         
-        x_train, y_train = self.get_feature_vectors_from_days(self.get_training_days(True), columns_to_drop, time_steps_back, time_steps_forward)
-        x_test, y_test = self.get_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, time_steps_back, time_steps_forward)
+        x_train, y_train = self.get_normalized_feature_vectors_from_days(self.get_training_days(True), columns_to_drop, time_steps_back, time_steps_forward)
+        x_test, y_test = self.get_normalized_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, time_steps_back, time_steps_forward)
+        x_train = x_train.reshape((x_train.shape[0], x_train.shape[1]/n_features, n_features))
+        x_test = x_test.reshape((x_test.shape[0], x_test.shape[1]/n_features, n_features))
 
         return x_train, y_train, x_test, y_test
 
