@@ -252,8 +252,8 @@ class DataHelper():
         
         x_train, y_train = self.get_normalized_feature_vectors_from_days(self.get_training_days(True), columns_to_drop, time_steps_back, time_steps_forward)
         x_test, y_test = self.get_normalized_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, time_steps_back, time_steps_forward)
-        x_train = x_train.reshape((x_train.shape[0], x_train.shape[1]/n_features, n_features))
-        x_test = x_test.reshape((x_test.shape[0], x_test.shape[1]/n_features, n_features))
+        x_train = x_train.reshape((x_train.shape[0], int(x_train.shape[1]/n_features), n_features))
+        x_test = x_test.reshape((x_test.shape[0], int(x_test.shape[1]/n_features), n_features))
 
         return x_train, y_train, x_test, y_test
 
@@ -291,7 +291,7 @@ class DataHelper():
 
         return x, y
     
-    def predict_day_from_features(self, x, predictor, time_steps_back=3):
+    def predict_day_from_features(self, x, predictor, time_steps_back=3, is_cnn=False):
         """
         Predicts whole day attandance from feature `x` using `predictor`
         Each prediction step is using results from last predictions.
@@ -311,8 +311,12 @@ class DataHelper():
                 for data_id in prediction_ids:
                     data[data_id] = y_pred[y_pred_id]
                     y_pred_id += 1
-            prediction = predictor.predict([data])
-            y_pred.append(prediction[0])
+            if is_cnn:
+                prediction = predictor.predict([data])
+                y_pred.append(prediction[0])
+            else:   
+                prediction = predictor.predict([data.reshape((1, data.shape[0], data.shape[1]))])
+                y_pred.append(prediction[0][0]*400)
         return y_pred
     
     def predict_day(self, day, predictor, time_steps_back=3):
@@ -326,6 +330,32 @@ class DataHelper():
         """
         x, y = self.build_timeseries(day.data, time_steps_back)
         return self.predict_day_from_features(x, predictor, time_steps_back)
+
+    def predict_cnn_day(self, day, predictor, columns_to_keep=['pool','day_of_week','month','minute_of_day','year'], time_steps_back=3):
+        """
+        Predicts whole day attandance for `day` using `predictor`
+        Each prediction step is using results from last predictions.
+        :param day: Instance of Day object
+        :param predictor: sklearn predictor that have function predict accepting one line from `x` as input
+        :param time_step_back: Number of time stamps in history that are packed together as input features
+        :return: numpy array predictions
+        """
+        columns_to_drop = self.columns_to_drop_from_columns_to_keep(columns_to_keep)
+        n_features = len(columns_to_keep)
+        x, y = self.get_normalized_feature_vectors_from_days([day], columns_to_drop, time_steps_back)
+        x = x.reshape((x.shape[0], int(x.shape[1]/n_features), n_features))
+
+        return self.predict_day_from_features(x, predictor, time_steps_back)    
+
+    def columns_to_drop_from_columns_to_keep(self, columns_to_keep):
+        columns_to_drop = list()
+        if columns_to_keep is not None:
+            for column in self.get_all_columns_names():
+                if column not in columns_to_keep:
+                    columns_to_drop.append(column)
+        else:
+            columns_to_drop = ['time']
+        return columns_to_drop
         
     def mse_on_testing_days(self, predictor, columns= None, time_steps_back=3):
         """
