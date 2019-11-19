@@ -10,11 +10,14 @@ from keras.layers.convolutional import MaxPooling1D
 from keras.models import model_from_json
 
 class ConvolutionalNeuralNetwork():
-	def __init__(self):
+	def __init__(self, model_name=None):
 		self.dh = DataHelper()
 		self.columns = ['pool','day_of_week','month','minute_of_day','year'] 
 		self.time_steps_back = 3
 		self.model = None
+		self.model_name = model_name
+		if model_name is None:
+			self.model_name = 'cnn_model'
 		self.build_model()
 
 	def build_model(self):
@@ -27,10 +30,13 @@ class ConvolutionalNeuralNetwork():
 		self.model.add(Dense(1))
 		self.model.compile(optimizer='adam', loss='mse')
 
-	def fit(self, x_train, y_train):
+	def fit_with_training_data(self, epochs=10):
+		x_train, y_train, x_test, y_test = self.dh.generate_feature_vectors_for_cnn(self.columns, self.time_steps_back)
+		self.fit(x_train, y_train, epochs)
+
+	def fit(self, x_train, y_train, epochs=10):
 		if self.model is not None:
-			# x_train, y_train, x_test, y_test = self.dh.generate_feature_vectors_for_cnn(self.columns, self.time_steps_back)
-			self.model.fit(x_train, y_train, epochs=10, validation_split=0.2)
+			self.model.fit(x_train, y_train, epochs=epochs, validation_split=0.3)
 			self.save_model()
 		else:
 			print('Cannot fit. Build model first.')
@@ -47,8 +53,8 @@ class ConvolutionalNeuralNetwork():
 		print("CNN model saved to disk")
 
 	def load_model(self):
-		json_file = open('cnn_model.json', 'r')
+		json_file = open(self.model_name+'.json', 'r')
 		model_json = json_file.read()
 		json_file.close()
 		self.model = model_from_json(model_json)
-		self.model.load_weights("cnn_weights.h5")
+		self.model.load_weights(self.model_name+'_weights.h5')
