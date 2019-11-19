@@ -309,14 +309,23 @@ class DataHelper():
             if i > time_steps_back:
                 y_pred_id = -time_steps_back
                 for data_id in prediction_ids:
-                    data[data_id] = y_pred[y_pred_id]
+                    if is_cnn:
+                        data[data_id][0] = y_pred[y_pred_id]
+                    else:
+                        data[data_id] = y_pred[y_pred_id]
                     y_pred_id += 1
             if is_cnn:
+                prediction = predictor.predict([data.reshape((1, data.shape[0], data.shape[1]))])
+                y_pred.append(prediction[0][0])
+            else:   
                 prediction = predictor.predict([data])
                 y_pred.append(prediction[0])
-            else:   
-                prediction = predictor.predict([data.reshape((1, data.shape[0], data.shape[1]))])
-                y_pred.append(prediction[0][0]*400)
+
+        if is_cnn:
+            for i, num in enumerate(y_pred):
+                if not np.isnan(num):
+                    y_pred[i] = int(400*num)
+
         return y_pred
     
     def predict_day(self, day, predictor, time_steps_back=3):
@@ -345,9 +354,17 @@ class DataHelper():
         x, y = self.get_normalized_feature_vectors_from_days([day], columns_to_drop, time_steps_back)
         x = x.reshape((x.shape[0], int(x.shape[1]/n_features), n_features))
 
-        return self.predict_day_from_features(x, predictor, time_steps_back)    
+        return self.predict_day_from_features(x, predictor, time_steps_back, True)    
 
     def columns_to_drop_from_columns_to_keep(self, columns_to_keep):
+        """
+        From list of columns that should be kept in generated data computes list
+        of columns that must me dropped to result only in columns to be kept staying in
+        data frame.
+        :param columns_to_keep: List of columns that should remain in generated features. Deafult is None, when 
+                                all columns appart from `time` remains.
+        :return: List of columns to drop
+        """
         columns_to_drop = list()
         if columns_to_keep is not None:
             for column in self.get_all_columns_names():
@@ -404,7 +421,7 @@ class DataHelper():
         l2, = plt.plot(y_pred)
         plt.show()
         
-    def show_n_days_prediction(self, predictor, columns_to_keep=None, days=6, time_steps_back=3):
+    def show_n_days_prediction(self, predictor, columns_to_keep=None, days=6, time_steps_back=3, is_cnn=False):
         """
         Shows plots for several testing days for given predictor.
         :param predictor: fitted sklearn predictor
@@ -440,7 +457,10 @@ class DataHelper():
         for i, day_id in enumerate(days_list_indices):
             day_date = days_list[day_id].data['time'].iloc[0][:10]
             x, y = self.get_test_day_feature_vectors(day_id, columns_to_keep, time_steps_back)
-            y_pred = self.predict_day_from_features(x, predictor, time_steps_back)
+            if is_cnn:
+                y_pred = self.predict_cnn_day(days_list[day_id], predictor, columns_to_keep, time_steps_back)
+            else:
+                y_pred = self.predict_day_from_features(x, predictor, time_steps_back)
             ax = fig.add_subplot(rows, columns, i+1)
             ax.title.set_text('Day %d (%s) - mse=%.0f' % (day_id, day_date, mean_squared_error(y_pred, y)))
             l1, = plt.plot(y)
@@ -470,5 +490,3 @@ class DataHelper():
                 l1, = plt.plot(y)
                 img_id += 1
         plt.show()
-
-
