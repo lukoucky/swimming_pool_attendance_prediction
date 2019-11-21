@@ -140,13 +140,7 @@ class DataHelper():
         :param time_steps_forward: Number of time stamps in future that are packed together as output results
         :return: Two numpy arrays with features and results
         """
-        columns_to_drop = list()
-        if columns_to_keep is not None:
-            for column in self.get_all_columns_names():
-                if column not in columns_to_keep:
-                    columns_to_drop.append(column)
-        else:
-            columns_to_drop = ['time']
+        columns_to_drop = self.columns_to_drop_from_columns_to_keep(columns_to_keep)
         
         n_testing_days = len(self.get_testing_days())
         if day_id < n_testing_days:
@@ -165,13 +159,7 @@ class DataHelper():
         :param time_steps_forward: Number of time stamps in future that are packed together as output results
         :return: Four numpy arrays with structure: train_features, train_results, test_features, test_results
         """
-        columns_to_drop = list()
-        if columns_to_keep is not None:
-            for column in self.get_all_columns_names():
-                if column not in columns_to_keep:
-                    columns_to_drop.append(column)
-        else:
-            columns_to_drop = ['time']
+        columns_to_drop = self.columns_to_drop_from_columns_to_keep(columns_to_keep)
         
         x_train, y_train = self.get_normalized_feature_vectors_from_days(self.get_training_days(True), columns_to_drop, time_steps_back, time_steps_forward)
         x_test, y_test = self.get_normalized_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, time_steps_back, time_steps_forward)
@@ -187,13 +175,7 @@ class DataHelper():
         :param time_steps_forward: Number of time stamps in future that are packed together as output results
         :return: Four numpy arrays with structure: train_features, train_results, test_features, test_results
         """
-        columns_to_drop = list()
-        if columns_to_keep is not None:
-            for column in self.get_all_columns_names():
-                if column not in columns_to_keep:
-                    columns_to_drop.append(column)
-        else:
-            columns_to_drop = ['time']
+        columns_to_drop = self.columns_to_drop_from_columns_to_keep(columns_to_keep)
         
         x_train, y_train = self.get_feature_vectors_from_days(self.get_training_days(True), columns_to_drop, time_steps_back, time_steps_forward)
         x_test, y_test = self.get_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, time_steps_back, time_steps_forward)
@@ -209,13 +191,7 @@ class DataHelper():
         :param time_steps_forward: Number of time stamps in future that are packed together as output results
         :return: Four numpy arrays with structure: train_features, train_results, test_features, test_results
         """
-        columns_to_drop = list()
-        if columns_to_keep is not None:
-            for column in self.get_all_columns_names():
-                if column not in columns_to_keep:
-                    columns_to_drop.append(column)
-        else:
-            columns_to_drop = ['time']
+        columns_to_drop = self.columns_to_drop_from_columns_to_keep(columns_to_keep)
         
         x_lengths = []
         for i, day in enumerate(self.get_training_days(True)):
@@ -239,16 +215,12 @@ class DataHelper():
         :param time_steps_forward: Number of time stamps in future that are packed together as output results
         :return: Four numpy arrays with structure: train_features, train_results, test_features, test_results
         """
-
-        columns_to_drop = list()
         if columns_to_keep is not None:
             n_features = len(columns_to_keep)
-            for column in self.get_all_columns_names():
-                if column not in columns_to_keep:
-                    columns_to_drop.append(column)
         else:
-            columns_to_drop = ['time']
-            n_features = len(self.get_all_columns_names())
+            n_features = len(self.get_all_columns_names()) - 1 # -1 for `time`
+
+        columns_to_drop = self.columns_to_drop_from_columns_to_keep(columns_to_keep)
         
         x_train, y_train = self.get_normalized_feature_vectors_from_days(self.get_training_days(True), columns_to_drop, time_steps_back, time_steps_forward)
         x_test, y_test = self.get_normalized_feature_vectors_from_days(self.get_testing_days(), columns_to_drop, time_steps_back, time_steps_forward)
@@ -316,7 +288,12 @@ class DataHelper():
                     y_pred_id += 1
             if is_cnn:
                 prediction = predictor.predict([data.reshape((1, data.shape[0], data.shape[1]))])
-                y_pred.append(prediction[0][0])
+                if prediction[0][0] > (320.0/400.0):
+                    y_pred.append(320.0/400.0)
+                elif prediction[0][0] < 0:
+                    y_pred.append(0)
+                else:
+                    y_pred.append(prediction[0][0])
             else:   
                 prediction = predictor.predict([data])
                 y_pred.append(prediction[0])
@@ -356,7 +333,7 @@ class DataHelper():
 
         return self.predict_day_from_features(x, predictor, time_steps_back, True)    
 
-    def columns_to_drop_from_columns_to_keep(self, columns_to_keep):
+    def columns_to_drop_from_columns_to_keep(self, columns_to_keep=None):
         """
         From list of columns that should be kept in generated data computes list
         of columns that must me dropped to result only in columns to be kept staying in
