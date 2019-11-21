@@ -374,7 +374,7 @@ class DataHelper():
             columns_to_drop = ['time']
         return columns_to_drop
         
-    def mse_on_testing_days(self, predictor, columns= None, time_steps_back=3):
+    def mse_on_testing_days(self, predictor, columns= None, time_steps_back=3, is_cnn=False):
         """
         Computes mean squared error on all testing days for given predictor.
         :param predictor: fitted sklearn predictor
@@ -385,13 +385,20 @@ class DataHelper():
         :return: mean squared error for all testing days
         """
         errors = list()
-        n_days = len(self.get_testing_days())
+        columns_to_drop = self.columns_to_drop_from_columns_to_keep(columns)
+        n_features = len(columns)
+        testing_days = self.get_testing_days()
+        n_days = len(testing_days)
         for i in range(n_days):
             x_day, y_day = self.get_test_day_feature_vectors(i, columns, time_steps_back)
-            errors.append(self.mse_on_day(x_day, y_day, predictor, time_steps_back))
+            if is_cnn:
+                x_day, _ = self.get_normalized_feature_vectors_from_days([testing_days[i]], columns_to_drop, time_steps_back)
+                x_day = x_day.reshape((x_day.shape[0], int(x_day.shape[1]/n_features), n_features))
+                
+            errors.append(self.mse_on_day(x_day, y_day, predictor, time_steps_back, is_cnn))
         return sum(errors)/n_days
 
-    def mse_on_day(self, x, y, predictor, time_steps_back=3):
+    def mse_on_day(self, x, y, predictor, time_steps_back=3, is_cnn=False):
         """
         Computes mean squared error for one day for given predictor.
         :param x: Numpy arrays with features
@@ -400,7 +407,7 @@ class DataHelper():
         :param time_step_back: Number of time stamps in history that are packed together as input features
         :return: mean squared error for all testing days
         """
-        y_pred = self.predict_day_from_features(x, predictor, time_steps_back)
+        y_pred = self.predict_day_from_features(x, predictor, time_steps_back, is_cnn)
         return mean_squared_error(y, y_pred)
     
     def show_prediction(self, test_day_id, predictor, columns=None):
