@@ -46,11 +46,11 @@ class ConvolutionalNeuralNetwork():
 
 	def save_model(self):
 		model_json = self.model.to_json()
-		with open("cnn_model.json", "w") as json_file:
+		with open(self.model_name+'.json', 'w') as json_file:
 		    json_file.write(model_json)
 
-		self.model.save_weights("cnn_weights.h5")
-		print("CNN model saved to disk")
+		self.model.save_weights(self.model_name+'_weights.h5')
+		print('CNN model saved to disk with name' + self.model_name)
 
 	def load_model(self):
 		json_file = open(self.model_name+'.json', 'r')
