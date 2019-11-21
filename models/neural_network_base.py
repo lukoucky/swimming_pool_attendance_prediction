@@ -20,6 +20,7 @@ class NeuralNetworkBase(ABC):
 		self.time_steps_back = 5
 		self.model = None
 		self.model_name = model_name
+		self.fit_history = dict()
 
 	@abstractmethod
 	def build_model(self):
@@ -29,31 +30,33 @@ class NeuralNetworkBase(ABC):
 		"""
 		pass
 
-	def fit_with_training_data(self, epochs=10, validation_split=0.3, use_cpu=True):
+	def fit_with_training_data(self, epochs=10, validation_split=0.3, verbose=1, use_cpu=True):
 		"""
 		Trains model for defined number of epochs on training data.
 		:param epochs: Number of epochs for fitting.
 		:param validation_split: Percentage of training data that will be used for validation
+		:param verbose: Verbose settign of fit function
 		:param use_cpu: If True it will force to use CPU even if GPU is available
 		"""
 		x_train, y_train, x_test, y_test = self.dh.generate_feature_vectors_for_cnn(self.columns, self.time_steps_back)
-		self.fit(x_train, y_train, epochs)
+		self.fit(x_train, y_train, epochs, validation_split, verbose, use_cpu)
 
-	def fit(self, x_train, y_train, epochs=10, validation_split=0.3, use_cpu=True):
+	def fit(self, x_train, y_train, epochs=10, validation_split=0.3, verbose=1, use_cpu=True):
 		"""
 		Trains model for defined number of epochs on provided data.
 		:param x_train: Numpy array with training data
 		:param y_train: Numpy array with ground truth results for training data
 		:param epochs: Number of epochs for fitting.
 		:param validation_split: Percentage of training data that will be used for validation
+		:param verbose: Verbose settign of fit function
 		:param use_cpu: If True it will force to use CPU even if GPU is available
 		"""
 		if self.model is not None:
 			if use_cpu:
 				with tf.device('/cpu:0'):
-					self.model.fit(x_train, y_train, epochs=epochs, validation_split=validation_split)
+					self.fit_history = self.model.fit(x_train, y_train, epochs=epochs, validation_split=validation_split, verbose=verbose)
 			else:
-				self.model.fit(x_train, y_train, epochs=epochs, validation_split=validation_split)
+				self.fit_history = self.model.fit(x_train, y_train, epochs=epochs, validation_split=validation_split, verbose=verbose)
 			self.save_model()
 		else:
 			print('Cannot fit. Build model first.')
@@ -97,3 +100,25 @@ class NeuralNetworkBase(ABC):
 		self.columns = columns
 		self.time_steps_back = time_steps_back
 		self.build_model()
+
+	def get_mse(self):
+		"""
+		Computes mean square error on model
+		:return: mean square error
+		"""
+		return self.dh.mse_on_testing_days(self.model, self.columns, self.time_steps_back, True)
+
+	def show_n_predictions(self, n):
+		"""
+		Plots `n` predictions from training data using this model.
+		:param n: If integer then represents number of random testing days. If list of integers
+					then represents day ids from testing days. Last possible option is 
+					string `all` that will plot all testing days.
+		"""
+		self.dh.show_n_days_prediction(self.model, self.columns, n, self.time_steps_back, True)
+
+	def print_mse(self):
+		"""
+		Prints mean square error
+		"""
+		print('MSE = %.2f'%(self.get_mse()))
