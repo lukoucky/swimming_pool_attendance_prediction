@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 from keras.models import model_from_json
 import tensorflow as tf
+tf.random.set_seed(17)
 
 
 class NeuralNetworkBase(ABC):
