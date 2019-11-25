@@ -10,6 +10,8 @@ from sklearn.metrics import mean_squared_error
 import pickle
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
+
 
 class WeatherData(object):
 	"""
@@ -197,9 +199,12 @@ class Day(object):
 		"""
 		df = self.data.copy()
 
-		df[df['pool'] < 0] = 0
-		df[df['pool'] > 400] = 400
-		df['pool'] = df['pool']/400
+		df['pool'].clip(lower=0, upper=400, inplace=True)
+
+		bins_pool = list(range(-10,410,10))
+		df['pool'] = pd.cut(df['pool'], bins=bins_pool, labels=False)
+
+		df['pool'] = df['pool']/40
 		
 		df['lines_reserved'] = df['lines_reserved']/8
 		df['day_of_week'] = df['day_of_week']/6
