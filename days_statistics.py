@@ -2,13 +2,14 @@ import copy
 import pickle
 import os
 import matplotlib.pyplot as plt
-
+from datetime import datetime
 
 class DaysStatistics:
 	def __init__(self):
 		self.days = list()
 		self.averages_weekday = list()
 		self.averages_weekend = list()
+		self.bad_dates = ['2018-02-20','2018-06-05','2018-06-06','2018-06-07','2018-06-08','2018-06-11','2018-06-12','2018-06-13','2018-06-14','2018-09-05','2018-03-17','2018-05-05','2018-06-10','2018-12-01']
 		self.generate_averages()
 
 	def generate_averages(self, pickle_path='data/days_statistics.pickle', override_pickle=False):
@@ -36,15 +37,17 @@ class DaysStatistics:
 					sums_weekend[month].append(0)
 
 			for day in self.days:
-				for index, row in day.data.iterrows():
-					month = row['month']-1
-					day_id = self.get_list_id(row['hour'], row['minute'])
-					if row['day_of_week'] < 5:
-						sums_weekday[month][day_id] += int(row['pool'])
-						n_weekday[month][day_id] += 1
-					else:
-						sums_weekend[month][day_id] += int(row['pool'])
-						n_weekend[month][day_id] += 1
+				ts = datetime.strptime(day.data['time'].iloc[0], '%Y-%m-%d %H:%M:%S')
+				if ts.strftime('%Y-%m-%d') not in self.bad_dates:
+					for index, row in day.data.iterrows():
+						month = row['month']-1
+						day_id = self.get_list_id(row['hour'], row['minute'])
+						if row['day_of_week'] < 5:
+							sums_weekday[month][day_id] += int(row['pool'])
+							n_weekday[month][day_id] += 1
+						else:
+							sums_weekend[month][day_id] += int(row['pool'])
+							n_weekend[month][day_id] += 1
 
 			for month in range(12):
 				for i in range(288):
@@ -157,6 +160,9 @@ if __name__ == '__main__':
 
 	ds = DaysStatistics()
 	ds.days = d1+d2
-	ds.generate_organisation_addition()
-	print(ds.org_addition)
+	ds.averages_weekday = list()
+	ds.averages_weekend = list()
+	ds.generate_averages(override_pickle=True)
+	# print(ds.org_addition)
+	ds.plot_monthly_average(11, True)
 
