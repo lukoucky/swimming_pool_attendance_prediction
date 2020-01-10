@@ -1,5 +1,6 @@
 \documentclass{article}
 
+\usepackage{float}
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
 \hypersetup{
@@ -14,7 +15,7 @@
         \ \\
         Predicting Swimming Pool Occupancy}
 \author{Lukas Koucky}
-\date{9 January 2020}
+\date{10 January 2020}
 
 \usepackage{natbib}
 \usepackage{graphicx}
@@ -50,7 +51,7 @@ There were two main goals for this project. First one was to train and deploy ma
 \item Train 3 different machine learning algorithms for pool occupancy prediction on clean data
 \begin{itemize}
 \item Several machine learning algorithms was inspected and trained for the task of prediction pool occupancy. 
-\item Following algorithms were inspected: Monthly average, Gaussian Mixture Model, Hidden Markov Model, Long Short Term Memory, Convolutional Neural Networks, Support Vector Machine, AdaBoost, Random Forest Classifier, Extra Trees Classifier
+\item Following algorithms were inspected: Monthly average, Gaussian Mixture Model, Hidden Markov Model, Long Short Term Memory, Convolutional Neural Networks, Support Vector Machine, AdaBoost, Random Forest Classifier and Regressor, Extra Trees Classifier and Regressor
 \item For supervised learning algorithms was time series transformed using sliding windows approach described in \citep{brownlee2019howtosupervised}.
 \end{itemize}
 
@@ -68,7 +69,7 @@ There were two main goals for this project. First one was to train and deploy ma
 \end{figure}
 
 \subsection{Metrics}
-Mean squared error is used to measure performance of prediction. Predictions are always generated for the whole day so it makes sense to measure performance also on the whole day. 
+Mean squared error is used to measure performance of prediction. Prediction output is vector of integers representing number of people in pool. Error metrics for task like this is usually either Mean Absolute Error (MAE) or Mean Square Error (MSE). Both metrics computes average of differences between ground truth values and predicted values. The main distinction between these two metrics is that MSE uses square of difference while MAE uses absotulute difference. I chose MSE as final metrics because it punishes outliers more than MAE since the error grows quadratically with distance and this forces algorithm to minimalize number of outliers. Predictions are always generated for the whole day so it makes sense to measure performance also on the whole day. 
 
 \begin{equation}
 \label{eq:mse}
@@ -90,31 +91,15 @@ Where $k$ is the number of days in dataset. $y$ is vector of ground truth data f
 \color{red}
 TODOs:
 \begin{itemize}
-    \item Prepsat jake algoritmi byly prozkoumane aby to odpovidalo v Train 3 different machine learning algorithms...
+    \item Promazat jake algoritmi byly prozkoumane aby to odpovidalo v Train 3 different machine learning algorithms...
+    \item Final read if it makes sence + check answers to questions in template.
 \end{itemize}
 \color{black}
 
 \section{Analysis}
 \subsection{Data Exploration} \label{sec:data_exploration}
-\color{red}
-TODOs:
-\begin{itemize}
-    \item Analyze the problem through visualizations and data exploration to have a better understanding of what algorithms and features are appropriate for solving it.
-    \item Only few organisations are used, describe why
-    \item Unusual data
-    \item Weekend vs weekday
-    \item Image2 - histogram of how often the organization is present
-    \item Image3 - interesting organisation and why to use them 
-    \item Data preprocessing, divide into days
-    \item If a dataset is present for this problem, have you thoroughly discussed certain features about the dataset? Has a data sample been provided to the reader?
-    \item If a dataset is present for this problem, are statistics about the dataset calculated and reported? Have any relevant results from this calculation been discussed?
-    \item If a dataset is not present for this problem, has discussion been made about the input space or input data for your problem?
-    \item Are there any abnormalities or characteristics about the input space or dataset that need to be addressed? (categorical variables, missing values, outliers, etc.)
 
-\end{itemize}
-\color{black}
-
-Every machine learning project starts with the data gathering and analysis. Data for this project comes from several sources. The most important data input is collected on my personal webserver that stores pool occupancy every 5 minutes into the MySQL database from publicly available data on \v{S}utka pool web page. Data are collected for past 2 years which means I have more than enough data for training, validation and testing of machine learning algorithms. But there are also many other inputs that influence attendance of swimming pool and are highly valuable for predictions. One of the most important is number of reserved swimming lines with names of organisations reserving the lines. This information is also collected from publicly available data on \v{S}utka pool web page. Next important input is time of the year that is included in timestamp of each timesample, public holidays acquired from \href{https://www.officeholidays.com/countries/czech-republic}{officeholydas.com} and finally local weather acquired from archive of \href{https://www.in-pocasi.cz/archiv/}{in-pocasi.cz}. Local weather contains information about temperature, humidity, precipitation, wind strength and air pressure from multiple stations across Prague. All these information are also stored in the MySQL database. You can find sample export from database in attached file database\_sample.txt and description of all tables and columns in file database\_description.pdf. History weather information is collected in database but for the occupancy prediction into the future is  used \href{http://www.in-pocasi.cz/pocasi-na-web/}{in-pocasi.cz} free predictions REST API. Working directly with MySQL database would not be very comfortable. This is why the database was exported, preprocessed and saved to csv files and pickle files. More about preprocessing can be found in section \ref{sec:data_preprocessing}. 
+Every machine learning project starts with the data gathering and analysis. Data for this project comes from several sources. The most important data input is collected on my personal webserver that stores pool occupancy every 5 minutes into the MySQL database from publicly available data on \v{S}utka pool web page. Data are collected for past 2 years which means I have more than enough data for training, validation and testing of machine learning algorithms. But there are also many other inputs that influence attendance of swimming pool and are highly valuable for predictions. One of the most important is number of reserved swimming lines with names of organisations reserving the lines. This information is also collected from publicly available data on \v{S}utka pool web page. Next important input is time of the year that is included in timestamp of each timesample, public holidays acquired from \href{https://www.officeholidays.com/countries/czech-republic}{officeholydas.com} and finally local weather acquired from archive of \href{https://www.in-pocasi.cz/archiv/}{in-pocasi.cz}. Local weather contains information about temperature, humidity, precipitation, wind strength and air pressure from multiple stations across Prague. All these information are also stored in the MySQL database. See Image \ref{fig:db_export} for the sample export from database. History weather information is collected in database but for the occupancy prediction into the future is  used \href{http://www.in-pocasi.cz/pocasi-na-web/}{in-pocasi.cz} free predictions REST API. Working directly with MySQL database would not be very comfortable. This is why the database was exported, preprocessed and saved to csv files and pickle files. More about preprocessing can be found in section \ref{sec:data_preprocessing}. 
 
 \begin{figure}[h!]
 \centering
@@ -160,6 +145,28 @@ available each with the unique id in column station. Description of table column
     \item \textbf{station} - unique id of weather station where the measurement comes from
 \end{itemize}
 
+\subsubsection{Data statistics}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=12cm]{imgs/stats.png}
+\caption{Statistics of selected data.}
+\label{fig:features_stats}
+\end{figure}
+
+Image \ref{fig:features_stats} shows statistics of selected data after preprocessing. It is important to note that this means that all the data from hours when pool is closed were not used. This resulted in 129440 time samples. There are all available data except time stamps and also all line reservation information are represented in column \emph{lines\_reserved}. Column \emph{pool} represents attendance of pool and column \emph{holiday} represents public holidays in binary form (1 - day was public holiday, 0 - day was not public holiday). Remaining columns ending with \emph{\_binned} are weather data after preprocessing described in section \ref{sec:data_preprocessing}. From the data is visible that average attendance throughout the whole dataset at any time is 105 people with maximum attendance 378 people. There are on average 1.18 reserved lines with almost no precipitation and average temperature around bin number 4 which is from 10 to 15 degrees Celsius (more about weather data binning in section \ref{sec:bin_weather}). These statistic data didn't produce as much information as visual exploratory of data in next section.
+
+\color{red}
+TODOs:
+\begin{itemize}
+    \item If a dataset is present for this problem, have you thoroughly discussed certain features about the dataset? Has a data sample been provided to the reader?
+    \item If a dataset is present for this problem, are statistics about the dataset calculated and reported? Have any relevant results from this calculation been discussed?
+        \begin{itemize}
+        \item Add statistics - average attendance, average lines reserved at each time (image), number of time samples, number of organisations, some interesting graphs of day vs feature?
+        \end{itemize}
+    \item Are there any abnormalities or characteristics about the input space or dataset that need to be addressed? (categorical variables, missing values, outliers, etc.)
+\end{itemize}
+\color{black}
+
 \subsection{Exploratory Visualization}
 \begin{figure}[h!]
 \centering
@@ -168,12 +175,25 @@ available each with the unique id in column station. Description of table column
 \label{fig:averages}
 \end{figure}
 
-\begin{figure}[h!]
+Image \ref{fig:averages} shows average attendance at each day of week. This image shows several very important patterns in data. Most obvious is difference between weekend and weekday. On weekdays is pool open from 6:00 and attendance quickly rise to 50 people. Than from around 14:00 attendance rise again until 18:00 when it starts to drop until closing time at 22:00. On weekend days pool opens at 10:00 which is followed by steep increase of occupancy that drops a little around 12:00, then rise again and from 18:00 decrease until closing time at 22:00.
+
+\begin{figure}[H]
 \centering
 \includegraphics[width=12cm]{imgs/monthly_averages_together.png}
-\caption{Monthly average attendance.}
+\caption{Monthly average attendance. Top image shows average attendance during weekdays. Bottom image shows average attendance during weekend days.}
 \label{fig:monthly_averages}
 \end{figure}
+
+Image \ref{fig:monthly_averages} shows average attendance at each month at weekdays (top) and weekends (bottom). This Image shows another important pattern in data and it is the seasonality. It is interesting that weekend attendance is much more influence by seasonality than weekdays. The difference between average attendance at 18:00 in January (the busiest month) and December (the calmest month) is 70 people on weekdays but 120 on weekends. December is also interesting from another perspective. The average attendance rises from July to January with the only exception in December. This could be caused by Christmas holidays and New Year when many people have vacations, spending time with family and friend and there are also many public holidays. 
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=12cm]{imgs/avg_lines.png}
+\caption{Average number of reserved lines on weekdays and weekend days.}
+\label{fig:lines_averages}
+\end{figure}
+
+Image \ref{fig:lines_averages} shows average number of reserved lines on weekdays and weekend days. Weekends are usually without any reservations, that is also why average number reserved lines is always under 0.5. Occupation on weekdays on the other hand are highly influence by reserved lines. There is clear pattern with over 2 lines reserved on average from 8 to 12 o'clock and than the similar pattern between 15 and 20 o'clock. This is also why I think that information about lines reservation will be important features for machine learning algorithms.
 
 \color{red}
 TODOs:
@@ -181,11 +201,11 @@ TODOs:
     \item Have you visualized a relevant characteristic or feature about the dataset or input data?
     \item Is the visualization thoroughly analysed and discussed?
     \item If a plot is provided, are the axes, title, and datum clearly defined?
+    \item Image - Histogram of how often the organization is present
+    \item Image - Interesting organisation and why to use them 
+    \item Image - Unusual data. Are there any?
 \end{itemize}
 \color{black}   
-
-
-Image \ref{fig:averages} shows average attendance for each day of week. This image shows several important patterns in data. Most obvious is difference between weekend and weekday. On weekdays is pool open from 6:00 and attendance quickly rise to 50 people. Than from around 14:00 attendance rise until 18:00 when it starts to drop again until closing time at 22:00. On weekend days pool opens at 10:00 which is followed by steep increase of occupancy that drops a little around 12:00, then rise again and from 18:00 decrease until closing time at 22:00.
 
 \subsection{Algorithms and Techniques}
 \color{red}
@@ -197,34 +217,16 @@ TODOs:
 \end{itemize}
 \color{black}
 
-\subsubsection{Random Forest Classifier}
-Random Forest Classifier is an ensemble method that combines multiple decision trees. Each decision tree produces prediction and the most frequent prediction is chosen as the output of Random Forest Classifier. Randomness in name comes from random bagging during learning phase. Each decision tree is learned on different subset of training data generated by randomly sampling the training set. Also the decision at each node is made on random sub-sample of available features and the best split is used \citep{yiu2019randomforest} \citep{wiki2019randomforest}.
+\subsubsection{Random Forest Classifier and Regressor}
+Random Forest is an ensemble method that combines multiple decision trees. Each decision tree produces prediction and the most frequent prediction is chosen as the output of Random Forest Classifier or average prediction for Random Forest Regressor. Randomness in name comes from random bagging during learning phase. Each decision tree is learned on different subset of training data generated by randomly sampling the training set. Also the decision at each node is made on random sub-sample of available features and the best split is used \citep{yiu2019randomforest} \citep{wiki2019randomforest}.
 
 
-Since Random Forest is a supervised learning method sliding windows approach described in \citep{brownlee2019howtosupervised} was used to serve data. At each time stamp are all other available features provided. This creates vector of input features with following content:
-\begin{equation}
-\label{eq:input_vector}
-v(t) = (attendance(t), lines(t), minute(t), day, month, year, weather(t), org(t))
-\end{equation}
-
-Where 
-\begin{itemize}
-    \item $t$ is the time step of the day. Each day is sampled with 5 minute steps. So for example $t = 0$ is time 0:00, $t = 3$ is time 0:15 and $t = 287$ is time 23:55, 
-    \item $v(t)$ is vector of features at time $t$.
-    \item $attendance(t)$ is pool attendance at time $t$.
-    \item $lines(t)$ is number of reserved lines at time $t$.
-    \item $minute(t)$ is minute of the day at time $t$. Minute of the day is counted from the beginning of the day.
-    \item $day$ is the day of week indexing from 0 as Monday. So for example 1 is Tuesday and 6 is Sunday.
-    \item $month$ is the month of the year indexing from 0 as January. So for example 3 is April and 11 is December.
-    \item $year$ is current year with offset 2015. So 4 is year 2019.
-    \item $weather(t)$ is vector of weather data at time $t$. Weather data contains following in this particular order: temperature, wind, humidity, precipitation, pressure. All the weather values are binned as described in section \ref{sec:data_preprocessing}.
-    \item $org(t)$ is  vector of organisations reserving swimming lines at time $t$. Precise content of this vector is described in section \ref{sec:data_preprocessing}.
-\end{itemize}
-
-\subsubsection{Extra Tree Classifier}
-Extra Tree Classifier is an ensemble learning method utilizing decision trees similar to Random Forest Classifier. There are however few differences between these two classifiers. Its name is coming from extremely randomized trees and was proposed by \citep{geurts206extratree}. The main difference from Random Forest is that Extra Tree does not bootstrap observations and splits node randomly. This means that randomness does not come from random data bootstrapping but from random splits of observations \citep{bhandari2019extratree}.
+\subsubsection{Extra Tree Classifier and Regressor}
+Extra Tree is an ensemble learning method utilizing decision trees similar to Random Forest. There are however few differences between these two classifiers. Its name is coming from extremely randomized trees and was proposed by \citep{geurts206extratree}. The main difference from Random Forest is that Extra Tree does not bootstrap observations and splits node randomly. This means that randomness does not come from random data bootstrapping but from random splits of observations \citep{bhandari2019extratree}.
 
 \subsubsection{CNN}
+% https://towardsdatascience.com/how-to-use-convolutional-neural-networks-for-time-series-classification-56b1b0a07a57
+
 \subsubsection{LSTM}
 
 \subsection{Benchmark}
@@ -290,7 +292,25 @@ First part of preprocessing was to convert data from MySQL database to csv file.
 
 You can see on Image \ref{fig:dataframe_structure} that only information used from \emph{occupancy} table is time stamp and pool attendance. Other data are not relevant for the occupancy of swimming pool itself. Another preprocessing step visible on Image \ref{fig:dataframe_structure} is reshaping of organisations reservation data. Database table \emph{lines\_usage} store names of organisation reserving lines in comma separated string while in this Data Frame have each organisation it's own column and value on each row represents number of lines reserved by given organisation in time stamp at that row. 
 
+Since all the algorithm used utilizes supervised learning a sliding windows approach described in \citep{brownlee2019howtosupervised} was used to serve data. At each time stamp are all  available features provided. This creates vector of input features with following content:
+\begin{equation}
+\label{eq:input_vector}
+v(t) = (attendance(t), lines(t), minute(t), day, month, year, weather(t), org(t))
+\end{equation}
 
+Where 
+\begin{itemize}
+    \item $t$ is the time step of the day. Each day is sampled with 5 minute steps. So for example $t = 0$ is time 0:00, $t = 3$ is time 0:15 and $t = 287$ is time 23:55, 
+    \item $v(t)$ is vector of features at time $t$.
+    \item $attendance(t)$ is pool attendance at time $t$.
+    \item $lines(t)$ is number of reserved lines at time $t$.
+    \item $minute(t)$ is minute of the day at time $t$. Minute of the day is counted from the beginning of the day.
+    \item $day$ is the day of week indexing from 0 as Monday. So for example 1 is Tuesday and 6 is Sunday.
+    \item $month$ is the month of the year indexing from 0 as January. So for example 3 is April and 11 is December.
+    \item $year$ is current year with offset 2015. So 4 is year 2019.
+    \item $weather(t)$ is vector of weather data at time $t$. Weather data contains following in this particular order: temperature, wind, humidity, precipitation, pressure. All the weather values are binned as described in section \ref{sec:data_preprocessing}.
+    \item $org(t)$ is  vector of organisations reserving swimming lines at time $t$. Precise content of this vector is described in section \ref{sec:data_preprocessing}.
+\end{itemize}
  
 \color{red}
 TODOs:
@@ -304,12 +324,12 @@ TODOs:
 \color{black}
 
 \subsection{Implementation}
-
-\subsubsection{Monthly average - benchmark model}
-
-
-\subsubsection{Random Forest Classifier}
-\subsubsection{Extra Tree Classifier}
+\subsubsection{Data preprocessing pipeline}
+\subsubsection{Helper classes}
+Utils (Days class, feature producers), DataHelper (days prediction, graphs), DaysStatistics
+\subsubsection{Monthly average}
+\subsubsection{Random Forest Classifier and Regressor}
+\subsubsection{Extra Tree Classifier and Regressor}
 \subsubsection{Convolutional Neural Network}
 Convolution Neural Network (CNN) is a type of deep learning method utilizing convolution mathematical operations. 
 
@@ -351,8 +371,11 @@ TODOs:
 \label{fig:lstm}
 \end{figure}
 
+\subsubsection{Notebooks}
+\subsubsection{Web application}
+
 \subsection{Refinement}
-\subsubsection{Bin weather data}
+\subsubsection{Bin weather data} \label{sec:bin_weather}
 Weather data presented large spectre of values but initial tests on Random Forests and LSTMs shows that this data had very little information gain and increase size of Random Forrest and training time of LSTMs. That is why I decide to bin weather data to followong bins:
 \begin{itemize}
     \item temperature - temperature in degrees of Celsius to following 8 bins: $(-100, -5], (-5,0], (0,5], (5,10], (10,15], (15,20], (20,25], (25, 100]$
@@ -365,6 +388,11 @@ Weather data presented large spectre of values but initial tests on Random Fores
 \subsubsection{Remove organisations with few reservations}
 Encoding each organisation as new column in Data Frame with all features generated more than 100 extra columns for more than 100 organisations. But many organisations had just very few reservations and would not be beneficial to keep this information in Data Frame. That is why only organisations that regulary reserve lines and therefor their reservation could have significiant influence of overall attendance were kept in Data Frame. All the other organisations (with less than 200 reservation in total) were compressed into one column \emph{reserved\_other}. This led to reduction of number of columns to reasonable XX TODO ADD CORRECT NUMBER.
 
+\subsection{Limit output of prediction to 0 - 400}
+\subsection{Implementation of my own grid search}
+Regualr grid search is using only MSE of one time sample prediction. This means all algorithms are quickly close to zero error. 
+Explain that I implemented grid seach that compares outputs of prediction on whole day prediction where output of prediction in one time step is input to prediction in next step.
+
 \section{Results}
 \subsection{Model Evaluation and Validation}
 \color{red}
@@ -375,7 +403,7 @@ TODOs:
     \item comparisn to of monthly average to other algos
     \item influence of parameter tuning on algorithms
     \item image with MSE of all methods on testing data - bar chart
-    \item image with 
+    \item image for RFC and ETC with n\_estimators on x axis and MSE on y axis
 \end{itemize}
 \color{black}
 
