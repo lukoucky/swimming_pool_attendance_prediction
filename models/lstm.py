@@ -22,7 +22,7 @@ class LongShortTermMemory(NeuralNetworkBase):
 
 		self.units = units
 
-		if model_type.stratswith('bidir'):
+		if model_type.startswith('bidir'):
 			self.model_type = 'bidirectional'
 			self.build_bidirectional_model(units)
 		else:
