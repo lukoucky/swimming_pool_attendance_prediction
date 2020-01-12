@@ -5,7 +5,13 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 class DaysStatistics:
+	"""
+	Class holding mohtly averages and other statistics
+	"""
 	def __init__(self):
+		"""
+		Constructor
+		"""
 		self.days = list()
 		self.averages_weekday = list()
 		self.averages_weekend = list()
@@ -13,6 +19,9 @@ class DaysStatistics:
 		self.generate_averages()
 
 	def generate_averages(self, pickle_path='data/days_statistics.pickle', override_pickle=False):
+		"""
+		Generates averages for all monaths for weekdays and weekends
+		"""
 		if os.path.isfile(pickle_path) and not override_pickle:
 			with open(pickle_path, 'rb') as input_file:
 				self.averages_weekday, self.averages_weekend = pickle.load(input_file)
@@ -60,31 +69,40 @@ class DaysStatistics:
 				pickle.dump([self.averages_weekday, self.averages_weekend], f)
 
 	def get_average_for_month(self, month, weekend):
+		"""
+		Getter for average for given month and flag for weekend or not.
+		"""
 		if weekend:
 			return self.averages_weekend[month]
 		else:
 			return self.averages_weekday[month]
 
 	def get_average_for_month_at_time(self, month, hour, minute, weekend):
+		"""
+		Getter for average for given month and flag for weekend or not at given time slot
+		"""
 		if weekend:
 			return self.averages_weekend[month][self.get_list_id(hour, minute)]
 		else:
 			return self.averages_weekday[month][self.get_list_id(hour, minute)]
 
 	def get_month_average_for_time(self, month, hour, minute):
+		"""
+		Getter for average for given month and flag for weekend or not at given time slot
+		"""
 		day_id = self.get_list_id(hour, minute)
 		return self.averages_weekday[month][day_id]
 
-	def get_average_for_last_days(self, n_days, month, day, hour, minute):
-		pass 
-
-	def get_average_for_last_days_at_time(self, n_days, month, day, hour, minute):
-		pass 
-
 	def get_list_id(self, hour, minute):
+		"""
+		Computes slot id from hour and minute of day
+		"""
 		return hour*12 + minute//5
 
 	def plot_year_averages_by_month(self, weekend):
+		"""
+		Plots averages by month
+		"""
 		plot_name = 'Average monthly attandance for '
 		if weekend:
 			plot_name += 'weekends'
@@ -107,6 +125,9 @@ class DaysStatistics:
 		plt.show()
 
 	def plot_monthly_average(self, month, weekend, other_data=None, other_data_offset=48):
+		"""
+		Plots monthly average for given month with possibility to add vector with other data (like single day)
+		"""
 		plot_name = 'Average attandance for '
 		if weekend:
 			plot_name += 'weekends'
@@ -127,6 +148,9 @@ class DaysStatistics:
 		plt.show()
 
 	def generate_organisation_addition(self):
+		"""
+		Generates how much does each organisation adds to monthly average
+		"""
 		reserved_columns = list()
 		total_attandance = list()
 		n = list()
