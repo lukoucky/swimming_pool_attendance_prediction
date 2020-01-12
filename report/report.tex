@@ -15,7 +15,7 @@
         \ \\
         Predicting Swimming Pool Occupancy}
 \author{Lukas Koucky}
-\date{10 January 2020}
+\date{12 January 2020}
 
 \usepackage{natbib}
 \usepackage{graphicx}
@@ -335,12 +335,12 @@ Six models plus one benchmark model were implemented and trained. All models wer
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=16cm]{imgs/placeholder.png}
-\caption{Mean Squared Errors of all implemented models.}
+\includegraphics[width=16cm]{imgs/performance.png}
+\caption{Mean Squared Errors of all implemented models. Green line shows performance of benchmark model.}
 \label{fig:all_models_result}
 \end{figure}
 
-You can see that performance of simple Monthly Average benchmark model is very good with \textbf{MSE 979}. In fact beating this performance turns out to be quite the challenge. Disappointment was performance of neural networks. It was very difficult to produce some reasonable performance from both models. CNN model turns out to be the worse. After testing several different architectures and different number of input time steps the best model performs still poorly with \textbf{MSE XXX}. Little better performance produced Extra Trees Classifier and Random Forest Classifier. Even thou I did not expect very good results from them, it produced satisfactory results with Extra Trees Classifier \textbf{MSE XXX} and Random Forest Classifier \textbf{MSE XXX}. Best performances produced Extra Trees Regressor and Random Forest Regressor. It was expected that both will preform much better than both classifiers but little unexpected that they will perform even better than neural networks. Random Forest Regressor reached \textbf{MSE XXX} a the best performance overall produced Extra Trees Regressor with \textbf{MSE 679}.
+You can see that performance of simple Monthly Average benchmark model is very good with \textbf{MSE 979}. In fact beating this performance turns out to be quite the challenge. Disappointment was performance of neural networks. It was very difficult to produce some reasonable performance from both models. CNN model turns out to be the worse. After testing several different architectures and different number of input time steps the best model performs still poorly with \textbf{MSE 1488}. LSTM performance was much better than CNN's but still not good enough for benchmark model. LSTM's best performance is \textbf{MSE 1013}. Little better performance than CNN produced Extra Trees Classifier. Even thou I did not expect very good results from both classifiers, Extra Trees produced satisfactory results with \textbf{MSE 1146}. Random Forest Classifier was performance was the worst of all tried models with \textbf{MSE 1488}. It is worth mentioning that little better performance was possible to achieve using classifiers with higher number of trees (with MSE around 1000 for Extra Trees). The problem was that from around 50 trees the classifiers become so large that even my 32GB RAM was too small for them and pickle with the model was larger than 20GB. Best performances produced Extra Trees Regressor and Random Forest Regressor. It was expected that both will preform much better than both classifiers but little unexpected that they will perform even better than neural networks. Random Forest Regressor reached \textbf{MSE 728} a the best performance overall produced Extra Trees Regressor with \textbf{MSE 674}.
 
 \begin{figure}[h!]
 \centering
@@ -386,17 +386,20 @@ TODOs:
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=16cm]{imgs/placeholder.png}
+\includegraphics[width=16cm]{imgs/ts_vs_mse.png}
 \caption{Influence of the number of trees in Extra Tree Regressor to overall performance.}
-\label{fig:number_of_trees}
+\label{fig:influence_trees}
 \end{figure}
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=16cm]{imgs/placeholder.png}
+\includegraphics[width=16cm]{imgs/trees_vs_mse.png}
 \caption{Influence of the number of time samples in input data of Extra Tree Regressor to overall performance.}
-\label{fig:number_of_trees}
+\label{fig:influence_ts}
 \end{figure}
+
+Best performing model overall was without doubt Extra Tree Regressor. During tuning of this were probably most interesting changes in performance influenced by number of time steps served as input and number of trees. You can see this influence on Images \ref{fig:influence_trees} and \ref{fig:influence_ts}. With the rising number of times steps used for prediction input is MSE dropping until the best performance at 9 time steps after which the error is more or less the same. More information about previous time series development definitely helps the algorithm with better predictions but at some point too much features can contain more noise for the predictor and stops being beneficial as you can see around the point of 9 time steps on Image \ref{fig:influence_ts}. Situation is almost the same with the number of trees on Image \ref{fig:influence_trees}. Here the error still drops with increasing number of trees. But for the number of trees above 50 is MSE almost the same while training time size of model rises a lot. 50 seems to be the number of trees when anything more will not influence overall performance and the prediction can no longer benefit from the randomness of extra trees. That is why number of trees 50 was chosen as the best fit for final model.
+
 
 \subsection{Reflection}
 
