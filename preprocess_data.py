@@ -284,6 +284,7 @@ def generate_csv():
 	data_frame = cut_weather(data_frame, True)
 	data_frame = cut_lines_reservation(data_frame)
 	save_data_to_csv(data_frame, DATASET_CSV_PATH)
+	split_csv(data_frame)
 
 
 def load_csv():
@@ -367,5 +368,4 @@ def cut_lines_reservation(data_frame, drop_limit=200):
 
 
 if __name__ == '__main__':
-	df = load_csv()
-	scatter_plot_attendance_dependency('day_of_week', df)
+	generate_csv()
