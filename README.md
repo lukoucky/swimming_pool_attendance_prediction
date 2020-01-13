@@ -1,9 +1,9 @@
 # Šutka Swimming Pool Attendance Prediction
 
-This repository contain all code for my personal project that is prediction attendance of [Šutka](https://www.sutka.eu/en/) swimming pool.
+This repository contain all code for my personal project that is predicting attendance of [Šutka](https://www.sutka.eu/en/) swimming pool.
 
 Project is still work in progress. So far following is done:
-* Gathering of attendance data, swimming line usage data and weather data and storing them in database
+* Gathering of attendance data, swimming lines usage data and weather data and storing them in database
 * Visualization of data on web page
 * Data processing for machine learning algorithms
 * Several algorithms trained for prediction. Best performance so far have [Extra Trees Regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html)
