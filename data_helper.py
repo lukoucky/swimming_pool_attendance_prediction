@@ -1,3 +1,4 @@
+import os
 import pickle
 import random
 import pandas as pd
@@ -5,7 +6,10 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 from numpy.random import seed
-seed(17)
+from utils import Day
+from random import Random
+from configuration import RANDOM_SEED
+seed(RANDOM_SEED)
 
 
 class DataHelper():
@@ -33,10 +37,72 @@ class DataHelper():
         """
         Loads pickle with all Days
         """
-        # TODO: generate days if pickle missing
-        with open(self.days_data_path, 'rb') as input_file:
-            self.days_train, self.days_valid, self.days_test = pickle.load(input_file)
-        self.columns = self.days_train[0].data.columns
+        if os.path.isfile(self.days_data_path):
+            with open(self.days_data_path, 'rb') as input_file:
+                self.days_train, self.days_test, self.days_valid = pickle.load(input_file)
+            self.columns = self.days_train[0].data.columns
+        else:
+            if os.path.isfile(self.csv_path):
+                days_stats = [0,0,0,0,0,0,0]
+                print('Preparing days.pickle')
+                days_list = []
+                last_date = 'start'
+                day_start_id = 0
+                day_stop_id = 0
+                n_bad_days = 0
+
+                data_frame = pd.read_csv(self.csv_path)
+                for index, row in data_frame.iterrows():
+                    if row['minute_of_day'] > 1320:
+                        data_frame['pool'].iloc[index] = 0
+                        
+                    new_date = data_frame['time'].iloc[index][:10]
+                    if not last_date == new_date:
+                        day_stop_id = index 
+                        if index > 0:
+                            new_day = Day(last_date)
+                            new_day.data = data_frame.iloc[day_start_id:day_stop_id]
+                            if day_stop_id-day_start_id == 288:
+                                days_list.append(new_day)
+                                days_stats[data_frame['day_of_week'].iloc[index]] += 1
+                            else:
+                                if abs(day_stop_id-day_start_id-288) < 15:
+                                    expected = 0
+                                    n_bad_days += 1
+                                    print('Error in day %s, length of day is %d'%(last_date, day_stop_id-day_start_id))
+                                    for value in list(data_frame['minute_of_day'].iloc[day_start_id:day_stop_id]):
+                                        if not value == expected:
+                                            print('Should be %d is %d'%(expected, value))
+                                            expected = value
+                                        expected += 5
+                                    print('\n\n')
+
+                                # TODO: Most of them have less than 10 missing values. 
+                                # If the missinga values are out of openning hours - fill with zeros and use
+                                # Many other missing values can be filled in
+                                # Also change of time from summer to winter makes 1 hour gap or duplicate hour
+                                # Move this function to data preprocessing
+
+                        last_date = data_frame['time'].iloc[index][:10]
+                        day_start_id = index
+
+                Random(RANDOM_SEED).shuffle(days_list)
+                train_portion = 0.4
+                validation_portion = 0.2
+                n_days = len(days_list)
+                print('Generated %d days. (%d days removed)'%(n_days, n_bad_days))
+                print('Number of days from Monday to Sunday', days_stats)
+                n_train_days = int(n_days * train_portion)
+                n_validation_days = int(n_days * validation_portion)
+                train_days = days_list[:n_train_days]
+                validation_days = days_list[n_train_days:n_train_days+n_validation_days]
+                test_days = days_list[n_train_days + n_validation_days:]
+
+                with open(self.days_data_path, 'wb') as input_file:
+                    pickle.dump([train_days, test_days, validation_days], input_file)             
+
+            else:
+                raise Exception('Missing days.pickle and dataset.csv.\nGenerate dataset.csv in preprocess_data.py first.')
         
     def get_all_days_list(self):
         """
@@ -420,7 +486,7 @@ class DataHelper():
                             string `all` than all testing days are plotted
         """
         days_list = self.get_testing_days()
-        if days == 'all':
+        if days == 'all': 
             n_days = len(days_list)
             days_list_indices = list(range(n_days-1))
         elif isinstance(days, list):
@@ -477,3 +543,6 @@ class DataHelper():
                 l1, = plt.plot(y)
                 img_id += 1
         plt.show()
+
+if __name__ == '__main__':
+    dh = DataHelper()
