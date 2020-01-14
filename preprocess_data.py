@@ -49,7 +49,7 @@ def add_lines_info_to_data(input_data_frame):
 	:return: DataFrame with occupancy and lines usage info
 	"""
 	data_frame = input_data_frame.copy()
-	df['lines_reserved'].values[:] = 0
+	data_frame['lines_reserved'].values[:] = 0
 	for index, row in input_data_frame.iterrows():
 		ts = datetime.datetime.strptime(row['time'], '%Y-%m-%d %H:%M:%S')
 		organisations = get_lines_usage_for_time_stamp(ts)
@@ -144,6 +144,8 @@ def add_weather_info_to_data(data_frame):
 		data_frame.at[index, 'humidity'] = weather_data.get_humidity()
 		data_frame.at[index, 'precipitation'] = weather_data.get_precipitation()
 		data_frame.at[index, 'pressure'] = weather_data.get_pressure()
+		if index%10 == 0:
+			print(index)
 	return data_frame
 
 
@@ -177,25 +179,55 @@ def clean_data(data_frame):
 	:param data_frame: DataFrame to be cleaned
 	:return: Cleaned DataFrame
 	"""
-	removed_odstavka = 0
-	if 'reserved_Odstavka' in data_frame:
-		indices_to_remove = list(df[df['reserved_Odstavka'] > 0].index)
-		removed_odstavka += len(indices_to_remove)
-		data_frame.drop(indices_to_remove, inplace=True)
-		data_frame.drop(columns=['reserved_Odstavka'], inplace=True)
+	bad_dates = ['2018-02-20','2018-06-05','2018-06-06','2018-06-07','2018-06-08','2018-06-11',
+				 '2018-06-12','2018-06-13','2018-06-14','2018-09-05','2018-03-17','2018-05-05',
+				 '2018-06-10','2018-12-01','2017-10-14']
 
-	indices_to_remove = list()
 	data_frame.drop(columns=['id', 'percent', 'park'],  inplace=True)
 
 	for index, row in data_frame.iterrows():
 		if row['pool'] == 0:
-			if int(row['day_of_week']) > 4 and 11 < int(row['time'][11:13]) < 20:
-				indices_to_remove.append(index)
-			elif 6 < int(row['time'][11:13]) < 20:
-				indices_to_remove.append(index)
+			if int(row['day_of_week']) > 4 and 605 < row['minute_of_day'] < 1310:
+				# print(row['time'], 'Bad weekend with zero')
+				bad_dates.append(row['time'][:10])
+			elif int(row['day_of_week']) < 5 and 380 < row['minute_of_day'] < 1310:
+				# print(row['time'], 'Bad weekday with zero')
+				bad_dates.append(row['time'][:10])
+		if 'reserved_Odstavka' in data_frame.columns and row['reserved_Odstavka'] > 0:
+			print(row['time'], 'Odstavka')
+			bad_dates.append(row['time'][:10])
 
-	print('Removing %d rows from dataset.' % (len(indices_to_remove) + removed_odstavka))
-	data_frame.drop(indices_to_remove, inplace=True)
+	bad_dates = list(set(bad_dates))
+	bad_dates.sort()
+	print('Removing %d days from dataset.' % (len(bad_dates)))
+	print(bad_dates)
+
+	if 'reserved_Odstavka' in data_frame.columns:
+		data_frame.drop(columns=['reserved_Odstavka'], inplace=True)
+	
+	# Consistency check
+	last_date = 'start'
+	last_minute = -5
+	n_day = 0
+	for index, row in data_frame.iterrows():
+		new_date = data_frame['time'].iloc[0][:10]
+		if not last_date == new_date:
+			last_minute = -5
+			last_date = data_frame['time'].iloc[0][:10]
+
+		if not row['minute_of_day'] == (last_minute + 5):
+			if new_date not in bad_dates:
+				bad_dates.append(new_date)
+				print('Error at index %d with date %s'%(index, row['time']))	
+				
+		last_minute += 5
+
+	rows_to_remove = []
+	for index, row in data_frame.iterrows():
+		if row['time'][:10] in bad_dates:
+			rows_to_remove.append(index)
+
+	data_frame.drop(rows_to_remove, inplace=True)	
 	return data_frame
 
 
@@ -206,7 +238,7 @@ def add_public_holidays(data_frame):
 	Czech Republic. Holiday dates for years 2017, 2018 and 2019 are listed in list below. 
 	:param data_frame: DataFrame where to add public holiday info
 	:return: Updated data_frame
-	"""""
+	"""
 	holidays = [
 		'2017-01-01', '2017-04-14', '2017-04-17', '2017-05-01', '2017-05-08', '2017-07-05', '2017-07-06',
 		'2017-09-28', '2017-10-28', '2017-11-17', '2017-12-24', '2017-12-25', '2017-12-26', '2018-01-01',
@@ -231,17 +263,18 @@ def resample_timestamp(data_frame):
 	Four new columns will be used for training and prediction.	
 	:return: Updated data_frame
 	"""
+	data_frame['year'] = 0
 	data_frame['month'] = 0
 	data_frame['day'] = 0
-	data_frame['hour'] = 0
-	data_frame['minute'] = 0
+	data_frame['minute_of_day'] = 0
 
 	for index, row in data_frame.iterrows():
 		ts = row['time']
-		data_frame.at[index, 'month'] = ts[5:7]
-		data_frame.at[index, 'day'] = ts[8:10]
-		data_frame.at[index, 'hour'] = ts[11:13]
-		data_frame.at[index, 'minute'] = ts[14:16]
+		data_frame.at[index, 'year'] = int(ts[:4])
+		data_frame.at[index, 'month'] = int(ts[5:7])
+		data_frame.at[index, 'day'] = int(ts[8:10])
+		minute_of_day = 60*int(ts[11:13]) + int(ts[14:16])
+		data_frame.at[index, 'minute_of_day'] = 5 * round(minute_of_day/5)
 
 	return data_frame
 
@@ -275,16 +308,23 @@ def generate_csv():
 	Generates csv file to configuration.DATASET_CSV_PATH path from
 	SQLite database located at configuration.DB_PATH
 	"""
-	data_frame = get_all_occupancy_data()
+	data_frame = get_all_occupancy_data(False)
 	data_frame = resample_timestamp(data_frame)
-	data_frame = add_public_holidays(data_frame)
-	data_frame = add_weather_info_to_data(data_frame)
-	data_frame = add_lines_info_to_data(data_frame)
+	print('Resample time stamp DONE')
 	data_frame = clean_data(data_frame)
+	print('Clean data DONE')
+	data_frame = add_public_holidays(data_frame)
+	print('Add holidays DONE')
+	data_frame = add_weather_info_to_data(data_frame)
+	print('Add weather DONE')
+	data_frame = add_lines_info_to_data(data_frame)
+	print('Add lines DONE')
 	data_frame = cut_weather(data_frame, True)
+	print('Cut weather DONE')
 	data_frame = cut_lines_reservation(data_frame)
+	print('Cut lines DONE')
 	save_data_to_csv(data_frame, DATASET_CSV_PATH)
-	split_csv(data_frame)
+	#split_csv(data_frame)
 
 
 def load_csv():
