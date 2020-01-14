@@ -55,7 +55,7 @@ class DataHelper():
                 for index, row in data_frame.iterrows():
                     if row['minute_of_day'] > 1320:
                         data_frame['pool'].iloc[index] = 0
-                        
+
                     new_date = data_frame['time'].iloc[index][:10]
                     if not last_date == new_date:
                         day_stop_id = index 
@@ -311,7 +311,7 @@ class DataHelper():
         dim_1 = matrix.shape[1]
 
         x = np.zeros((dim_0, time_steps_back*dim_1))
-        y = np.zeros((dim_0, time_steps_forward))
+        y = np.zeros((288, time_steps_forward))
 
         for i in range(dim_0):
             x_data = matrix[i:time_steps_back+i]
@@ -326,9 +326,9 @@ class DataHelper():
                 y_provis = np.zeros(time_steps_forward,)
                 for i, value in enumerate(y_data):
                     y_provis[i] = value
-                y[i] = y_provis
+                y[time_steps_back+i] = y_provis
             else:
-                y[i] = np.reshape(y_data, time_steps_forward)
+                y[time_steps_back+i] = np.reshape(y_data, time_steps_forward)
 
         return x, y
     
@@ -341,11 +341,22 @@ class DataHelper():
         :param time_step_back: Number of time stamps in history that are packed together as input features
         :return: numpy array predictions
         """
-        y_pred = list()
+        if len(x) < 288:
+            y_pred = [0]*(288-len(x))
+        else:
+            y_pred = list()
         prediction_ids = [0]*time_steps_back
         for i in range(1,time_steps_back):
             prediction_ids[i] = int(x.shape[1]/time_steps_back)*i
         
+        #
+        # Ugly hack to make ETR work with fixed 288 length of data
+        # It would be better to figure out how to make it work normaly or make 2 model - one for weekend, one for weekday
+        #
+        start_id = 0
+        if x[0][2] > 4:
+            start_id = 110           
+
         for i, data in enumerate(x):
             if i > time_steps_back:
                 y_pred_id = -time_steps_back
@@ -363,9 +374,13 @@ class DataHelper():
                     y_pred.append(0)
                 else:
                     y_pred.append(prediction[0][0])
-            else:   
-                prediction = predictor.predict([data])
-                y_pred.append(prediction[0])
+            else:
+                # Also part of ugly hack for ETR
+                if i >= start_id:
+                    prediction = predictor.predict([data])
+                    y_pred.append(prediction[0])
+                else:
+                    y_pred.append(0)
 
         if is_cnn:
             for i, num in enumerate(y_pred):
