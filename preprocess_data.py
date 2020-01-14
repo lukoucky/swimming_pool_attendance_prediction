@@ -181,7 +181,8 @@ def clean_data(data_frame):
 	"""
 	bad_dates = ['2018-02-20','2018-06-05','2018-06-06','2018-06-07','2018-06-08','2018-06-11',
 				 '2018-06-12','2018-06-13','2018-06-14','2018-09-05','2018-03-17','2018-05-05',
-				 '2018-06-10','2018-12-01','2017-10-14']
+				 '2018-06-10','2018-12-01','2017-10-14','2019-11-29','2018-06-09','2019-05-04',
+				 '2018-02-19','2018-09-04','2019-11-30','2019-12-31']
 
 	data_frame.drop(columns=['id', 'percent', 'park'],  inplace=True)
 
@@ -219,7 +220,7 @@ def clean_data(data_frame):
 			if new_date not in bad_dates:
 				bad_dates.append(new_date)
 				print('Error at index %d with date %s'%(index, row['time']))	
-				
+
 		last_minute += 5
 
 	rows_to_remove = []
