@@ -22,6 +22,8 @@ class NeuralNetworkBase(ABC):
 		self.model = None
 		self.model_name = model_name
 		self.fit_history = {'val_loss':list(), 'loss':list(), 'mse':list()}
+		self.time_steps_back = 5
+		self.columns = ['pool','lines_reserved','day_of_week','month','minute_of_day','year','reserved_Vodnik'] 
 
 	@abstractmethod
 	def build_model(self):
