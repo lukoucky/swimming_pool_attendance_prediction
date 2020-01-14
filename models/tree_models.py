@@ -4,6 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, make_scorer
 from data_helper import DataHelper
+from copy import deepcopy
 import numpy as np
 import pickle
 
@@ -45,7 +46,28 @@ class TreeModelBase():
 		Fit model on training data.
 		"""
 		x_train, y_train, x_test, y_test = self.dh.generate_feature_vectors(self.columns, self.time_steps_back)
+
 		self.model.fit(x_train, y_train.ravel())
+
+	def fit_two_models(self):
+		all_days = self.dh.get_training_days(True)
+		weekdays = list()
+		weekends = list()
+		for day in all_days:
+			if day.data['day_of_week'].iloc < 5:
+				weekdays.append(day)
+			else:
+				weekends.append(day)
+
+		columns_to_drop = self.dh.columns_to_drop_from_columns_to_keep(self.columns)
+        x_weekdays, y_weekdays = self.dh.get_feature_vectors_from_days(weekdays, columns_to_drop, self.time_steps_back)
+        x_weekends, y_weekends = self.dh.get_feature_vectors_from_days(weekends, columns_to_drop, self.time_steps_back)
+
+        self.weekend_model = deepcopy(self.model)
+        self.weekday_model = deepcopy(self.model)
+        self.weekend_model.fit(x_weekdays, y_weekdays.ravel())
+        self.weekday_model.fit(x_weekends, y_weekends.ravel())
+        
 
 	def get_mse(self):
 		"""
