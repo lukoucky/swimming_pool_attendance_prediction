@@ -27,7 +27,7 @@ class MonthlyAverageClassifier():
         :param time_step_back: Number of time stamps in history that are packed together as input features
         """
 		self.ds.days = days_list
-		self.ds.generate_averages('data/monthly_avg_classifier_days_statistics.pickle', False)
+		self.ds.generate_averages()
 		self.columns = columns
 		self.time_steps_back = time_steps_back
 
