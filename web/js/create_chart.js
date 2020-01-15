@@ -121,8 +121,8 @@ function updateChart(date_string){
             generateChart(data, config);
             console.log(window.myLine.data.datasets.length);
             addDataFromCSV('data/prediction_monthly_average/'+date_string+'.csv', 'rgba(67, 175, 105,0.9)', 'Monthly Average');
-            addDataFromCSV('data/prediction_extra_tree/'+date_string+'.csv', 'rgba(102, 46, 155,0.9)', 'Extra Trees Classifier');
-            // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Classifier\nMSE = 736');
+            addDataFromCSV('data/prediction_extra_tree/'+date_string+'.csv', 'rgba(102, 46, 155,0.9)', 'Extra Trees Regressor');
+            // addDataFromCSV('data/prediction_random_forest/'+date_string+'.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Regressor');
             // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(67, 175, 105,0.9)', 'Hidden Markov Model');
             // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(14,124,123,0.9)', 'Long Short Term Memory');
         }   
