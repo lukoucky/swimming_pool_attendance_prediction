@@ -162,20 +162,6 @@ function generateChart(data, conf, date_string){
     });   
  }
 
- function addDataToChart(data, canvas_id, conf){
-    var pool_data = [];
-    var line_data = [];
-    var ids = [];
-
-    for (var i = 1; i < data.length; i++) {
-        pool_data.push(data[i][1]);
-        line_data.push(data[i][2]);
-        ids.push(data[i][0]);
-    }
-
-    addData(window.myLine, pool_data, "people", true);
- }
-
  function addData(chart, data, type, updateNow, color, title) {
     color = color || "rgba(234,53,70,1)"
     title = title || 'Actual occupancy'
