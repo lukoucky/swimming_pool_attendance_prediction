@@ -57,6 +57,8 @@ var config = {
     }
 };
 
+const server_address = 'http://80.211.145.114:5000'
+
 var config_copy = JSON.parse(JSON.stringify(config));
 var today_plus_week = new Date();
 today_plus_week.setDate(today_plus_week.getDate() + 7)
@@ -68,7 +70,7 @@ var picker = new Pikaday(
         firstDay: 1,
         minDate: new Date(2017, 10, 15),
         maxDate: today_plus_week,
-        yearRange: [2017,2019],
+        yearRange: [2017,2020],
         toString(date, format) {
             var day = date.getDate();
             if(Number(day) < 10){
@@ -86,7 +88,6 @@ var picker = new Pikaday(
 $( "#datepicker" ).change(function() {
   console.log("datepicker change to "+document.getElementById('datepicker').value);
   var today = picker.toString('YYYY-MM-DD');
-  var csv_url = 'http://80.211.145.114:5000/test/'+today+'.csv';
   resetCanvas();
   updateChart(today);
 });
@@ -109,7 +110,7 @@ $(window).on('load', function() {
 
 
 function updateChart(date_string){
-    var csv_url = 'http://80.211.145.114:5000/test/'+date_string+'.csv';
+    var csv_url = server_address+'/attendance/'+date_string+'.csv';
 
     $.ajax({
         type: "GET",  
@@ -117,11 +118,10 @@ function updateChart(date_string){
         dataType: "jsonp",       
         success: function(response)  
         {
-            // data = $.csv.toArrays(response);
-            generateChart(response.prediction, config, date_string);
+            generateChart(response, config, date_string);
             // console.log(window.myLine.data.datasets.length);
-            // addDataFromCSV('http://80.211.145.114/data/prediction_monthly_average/'+date_string+'.csv', 'rgba(67, 175, 105,0.9)', 'Monthly Average');
-            // addDataFromCSV('http://80.211.145.114/data/prediction_extra_tree/'+date_string+'.csv', 'rgba(102, 46, 155,0.9)', 'Extra Trees Regressor');
+            addDataFromCSV(server_address+'/prediction/average/'+date_string+'.csv', 'rgba(67, 175, 105,0.9)', 'Monthly Average');
+            addDataFromCSV(server_address+'/prediction/extra_trees/'+date_string+'.csv', 'rgba(102, 46, 155,0.9)', 'Extra Trees Regressor');
             // addDataFromCSV('data/prediction_random_forest/'+date_string+'.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Regressor');
             // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(67, 175, 105,0.9)', 'Hidden Markov Model');
             // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(14,124,123,0.9)', 'Long Short Term Memory');
@@ -141,41 +141,10 @@ function resetCanvas(){
 
 
 function generateChart(data, conf, date_string){
-    var pool_data = [];
-    var line_data = [];
-    var ids = [];
+    addData(conf, data.attendance.split(','), "people", false);
+    addData(conf, data.lines_reserved.split(','), "lines", false);
 
-    var h = 0
-    var m = 0
-    for (var i = 0; i < 288; i++) {
-        var s = '';
-
-        if(Number(h) < 10){
-            s += '0'+String(h)+':';
-        }
-        else
-        {
-            s += String(h)+':';
-        }
-        if(Number(m) < 10){
-            s += '0'+String(m)+':';
-        }
-        else
-        {
-            s += String(m)+':';
-        }
-        s += '00';
-        ids.push(date_string+' '+s);
-        m += 5;
-        if(m == 60){
-            m = 0;
-            h += 1;
-        }
-    }
-    addData(conf, data.split(','), "people", false);
-    // addData(conf, line_data, "lines", false);
-
-    conf.data.labels = ids;
+    conf.data.labels = generate_time_array(date_string);
 
     var ctx = document.getElementById("today").getContext("2d");
     window.myLine = new Chart(ctx, conf);
@@ -188,12 +157,7 @@ function generateChart(data, conf, date_string){
     dataType: "jsonp",       
     success: function(response)  
     {
-        data = $.csv.toArrays(response);
-        var pool_data = [];
-        for (var i = 1; i < data.length; i++) {
-            pool_data.push(data[i][1]);
-        }
-        addData(window.myLine, pool_data, "people", true, color, title);
+        addData(window.myLine, response.prediction.split(','), "people", true, color, title);
     }   
     });   
  }
@@ -240,4 +204,14 @@ function generateChart(data, conf, date_string){
     {
         chart.update();
     }
+}
+
+function generate_time_array(date_string){
+    var ids = [];
+    const d = new Date(date_string+' 00:00:00');
+    for (var i = 0; i < 288; i++) {
+        var time_string = new Date(d.getTime() + i*5*60000).toLocaleTimeString();
+        ids.push(date_string + ' ' + time_string);
+    }
+    return ids;
 }
