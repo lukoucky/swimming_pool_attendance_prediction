@@ -185,10 +185,16 @@ function generateChart(data, conf, date_string){
 
 function generate_time_array(date_string){
     var ids = [];
+
     const d = new Date(date_string+' 00:00');
     for (var i = 0; i < 288; i++) {
-        var time_string = new Date(d.getTime() + i*5*60000).toLocaleTimeString();
-        ids.push(time_string.slice(0,-3));
+        var time_string = new Date(d.getTime() + i*5*60000).toLocaleTimeString().slice(0,-3);
+        if(time_string.startsWith('0')){
+            ids.push(time_string.slice(1));
+        }else{
+            ids.push(time_string);
+        }
     }
+
     return ids;
 }
