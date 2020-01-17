@@ -21,17 +21,9 @@ var config = {
         },
         scales: {
             xAxes: [{
-                type: "time",
-                bounds: 'ticks',
-                time: {
-                    unit: 'hour',
-                    unitStepSize: 0.5,
-                    tooltipFormat: "HH:mm",
-                    displayFormats: {
-                        hour: 'HH:mm'
-                    }
-                }
-                }],            
+                ticks:{
+                    maxTicksLimit: 32,
+            }}],  
             yAxes: [{
                 id: 'A',
                 position: 'left',
@@ -119,7 +111,6 @@ function updateChart(date_string){
         success: function(response)  
         {
             generateChart(response, config, date_string);
-            // console.log(window.myLine.data.datasets.length);
             addDataFromCSV(server_address+'/prediction/average/'+date_string+'.csv', 'rgba(67, 175, 105,0.9)', 'Monthly Average');
             addDataFromCSV(server_address+'/prediction/extra_trees/'+date_string+'.csv', 'rgba(102, 46, 155,0.9)', 'Extra Trees Regressor');
             // addDataFromCSV('data/prediction_random_forest/'+date_string+'.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Regressor');
@@ -128,8 +119,8 @@ function updateChart(date_string){
         }   
     });  
 
-    config.options.scales.xAxes[0].time.min = date_string + ' 06:00';
-    config.options.scales.xAxes[0].time.max = date_string + ' 22:00';
+    config.options.scales.xAxes[0].ticks.min = '6:00';
+    config.options.scales.xAxes[0].ticks.max = '22:00';
 }
 
 function resetCanvas(){
@@ -194,10 +185,10 @@ function generateChart(data, conf, date_string){
 
 function generate_time_array(date_string){
     var ids = [];
-    const d = new Date(date_string+' 00:00:00');
+    const d = new Date(date_string+' 00:00');
     for (var i = 0; i < 288; i++) {
         var time_string = new Date(d.getTime() + i*5*60000).toLocaleTimeString();
-        ids.push(date_string + ' ' + time_string);
+        ids.push(time_string.slice(0,-3));
     }
     return ids;
 }
