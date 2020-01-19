@@ -46,4 +46,4 @@ def get_data(filepath, column):
 	return values[:-1]
 
 if __name__ == '__main__':
-	app.run(debug=True, host='0.0.0.0')
+	app.run(debug=True, host='0.0.0.0', ssl_context=('/home/cert/server.crt', '/home/cert/server.key'))
