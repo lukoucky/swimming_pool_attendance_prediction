@@ -32,7 +32,7 @@ var config = {
                     beginAtZero: true,
                     steps: 10,
                     stepValue: 30,
-                    max: 300,
+                    max: 350,
                 }
                 },{
                 id: 'B',
@@ -40,9 +40,9 @@ var config = {
                 display: true,
                 ticks: {
                     beginAtZero: true,
-                    steps: 6,
+                    steps: 7,
                     stepValue: 1,
-                    max: 6
+                    max: 7
                 }
                 }]
         }
