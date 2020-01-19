@@ -143,7 +143,7 @@ class DataHelper():
         """
         return self.columns
     
-    def reformat_feature_list(self, x, y):
+    def reformat_feature_list(self, x, y, fix_y_to_288=False):
         """
         Ferofmats feature vector and vector with results from list of numpy arrays to big numpy.
         :param x: List of numpy arrays with features
@@ -161,9 +161,12 @@ class DataHelper():
                 y_data = np.concatenate([y_data,data])
             else:
                 y_data = np.array(data)
-        return x_data, y_data.ravel()
+        y_data = y_data.ravel()
+        if fix_y_to_288:
+            y_data = np.pad(y_data,(288-len(y_data),0),'constant')
+        return x_data, y_data
     
-    def get_feature_vectors_from_days(self, days_list, columns_to_drop, time_steps_back=3, time_steps_forward=1):
+    def get_feature_vectors_from_days(self, days_list, columns_to_drop, time_steps_back=3, time_steps_forward=1, fix_y_to_288=False):
         """
         Creates feature vector and vector with results from Day object.
         :param days_list: List of Days from which are features generated
@@ -179,7 +182,7 @@ class DataHelper():
             x_day, y_day = self.build_timeseries(clean_data, time_steps_back, time_steps_forward)
             x.append(x_day)
             y.append(y_day)
-        return self.reformat_feature_list(x, y)
+        return self.reformat_feature_list(x, y, fix_y_to_288)
     
     def get_normalized_feature_vectors_from_days(self, days_list, columns_to_drop, time_steps_back=3, time_steps_forward=1):
         """
@@ -311,7 +314,7 @@ class DataHelper():
         dim_1 = matrix.shape[1]
 
         x = np.zeros((dim_0, time_steps_back*dim_1))
-        y = np.zeros((288, time_steps_forward))
+        y = np.zeros((dim_0, time_steps_forward))
 
         for i in range(dim_0):
             x_data = matrix[i:time_steps_back+i]
@@ -326,9 +329,9 @@ class DataHelper():
                 y_provis = np.zeros(time_steps_forward,)
                 for i, value in enumerate(y_data):
                     y_provis[i] = value
-                y[time_steps_back+i] = y_provis
+                y[i] = y_provis
             else:
-                y[time_steps_back+i] = np.reshape(y_data, time_steps_forward)
+                y[i] = np.reshape(y_data, time_steps_forward)
 
         return x, y
     
@@ -348,6 +351,8 @@ class DataHelper():
         prediction_ids = [0]*time_steps_back
         for i in range(1,time_steps_back):
             prediction_ids[i] = int(x.shape[1]/time_steps_back)*i
+
+        max_prediction_step = 50
         
         #
         # Ugly hack to make ETR work with fixed 288 length of data
@@ -355,7 +360,7 @@ class DataHelper():
         #
         start_id = 0
         if x[0][2] > 4:
-            start_id = 110           
+            start_id = 120 - time_steps_back         
 
         for i, data in enumerate(x):
             if i > time_steps_back:
@@ -376,9 +381,12 @@ class DataHelper():
                     y_pred.append(prediction[0][0])
             else:
                 # Also part of ugly hack for ETR
-                if i >= start_id:
+                if i >= start_id and i < 1320:
                     prediction = predictor.predict([data])
-                    y_pred.append(prediction[0])
+                    if prediction[0] > (y_pred[-1] + max_prediction_step):
+                        y_pred.append(y_pred[-1] + max_prediction_step)
+                    else:
+                        y_pred.append(prediction[0])
                 else:
                     y_pred.append(0)
 
@@ -489,7 +497,7 @@ class DataHelper():
         l2, = plt.plot(y_pred)
         plt.show()
         
-    def show_n_days_prediction(self, predictor, columns_to_keep=None, days=6, time_steps_back=3, is_cnn=False):
+    def show_n_days_prediction(self, predictor, columns_to_keep=None, days=6, time_steps_back=3, is_cnn=False, fix_y_to_288=False):
         """
         Shows plots for several testing days for given predictor.
         :param predictor: fitted sklearn predictor
@@ -530,6 +538,8 @@ class DataHelper():
             else:
                 y_pred = self.predict_day_from_features(x, predictor, time_steps_back)
             ax = fig.add_subplot(rows, columns, i+1)
+            if fix_y_to_288:
+                y = np.pad(y,(288-len(y),0),'constant')
             ax.title.set_text('Day %d (%s) - mse=%.0f' % (day_id, day_date, mean_squared_error(y_pred, y)))
             l1, = plt.plot(y)
             l2, = plt.plot(y_pred)

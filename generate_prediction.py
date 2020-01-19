@@ -1,4 +1,4 @@
-from models.tree_models import MyExtraTreesRegressor, MyExtraTreesClassifier, MyRandomForestRegressor, MyRandomForestClassifier
+from models.tree_models import MyExtraTreesRegressor, DoubleExtraTreesRegressor
 from models.monthly_average import MonthlyAverageClassifier
 from data_helper import DataHelper
 from days_statistics import DaysStatistics
@@ -11,8 +11,12 @@ from bs4 import BeautifulSoup
 import urllib.request
 import sys
 import unicodedata
+from utils import Day
 
-WEATHER_URL = 'http://api.openweathermap.org/data/2.5/forecast?id=3067696&units=metric&appid=__API___KEY__'
+WEATHER_API_KEY = None
+
+# URL is missing API KYE. Full address with API KEY is constructed in get_weather() method
+WEATHER_URL = 'http://api.openweathermap.org/data/2.5/forecast?id=3067696&units=metric&appid='
 
 
 class Predictor():
@@ -23,8 +27,8 @@ class Predictor():
         """
         self.dh = DataHelper()
         self.ds = DaysStatistics()
-        self.columns = ['pool', 'lines_reserved', 'day_of_week', 'month', 'day', 'hour', 'minute', 'holiday', 'reserved_Lavoda', 'reserved_Club Junior', 'reserved_Elab', 'reserved_Vodnik', 'reserved_Spirala', 'reserved_Amalka', 'reserved_Dukla', 'reserved_Lodicka', 'reserved_Elab team', 'reserved_Sports Team', 'reserved_Modra Hvezda', 'reserved_VSC MSMT', 'reserved_Orka', 'reserved_Activity', 'reserved_Aquamen', 'reserved_Zralok', 'reserved_SK Impuls', 'reserved_Motylek', 'reserved_3fit', 'reserved_Jitka Vachtova', 'reserved_Hodbod', 'reserved_DUFA', 'reserved_The Swim', 'reserved_Neptun', 'reserved_Strahov Cup', 'reserved_Apneaman', 'reserved_Michovsky', 'reserved_Betri', 'reserved_Pospisil', 'reserved_Vachtova', 'reserved_Riverside', 'reserved_Vodni polo Sparta', 'reserved_Road 2 Kona', 'reserved_Water Polo Sparta Praha', 'reserved_Sucha', 'reserved_Totkovicova', 'reserved_DDM Spirala', 'reserved_PS Perla', 'reserved_Dufkova - pulka drahy', 'reserved_Pavlovec', 'reserved_Sidorovich', 'reserved_OS DUFA',  'reserved_other', 'minute_of_day', 'year']
-        self.prediction_steps = 210
+        # self.columns = ['pool', 'lines_reserved', 'day_of_week', 'month', 'day', 'hour', 'minute', 'holiday', 'reserved_Lavoda', 'reserved_Club Junior', 'reserved_Elab', 'reserved_Vodnik', 'reserved_Spirala', 'reserved_Amalka', 'reserved_Dukla', 'reserved_Lodicka', 'reserved_Elab team', 'reserved_Sports Team', 'reserved_Modra Hvezda', 'reserved_VSC MSMT', 'reserved_Orka', 'reserved_Activity', 'reserved_Aquamen', 'reserved_Zralok', 'reserved_SK Impuls', 'reserved_Motylek', 'reserved_3fit', 'reserved_Jitka Vachtova', 'reserved_Hodbod', 'reserved_DUFA', 'reserved_The Swim', 'reserved_Neptun', 'reserved_Strahov Cup', 'reserved_Apneaman', 'reserved_Michovsky', 'reserved_Betri', 'reserved_Pospisil', 'reserved_Vachtova', 'reserved_Riverside', 'reserved_Vodni polo Sparta', 'reserved_Road 2 Kona', 'reserved_Water Polo Sparta Praha', 'reserved_Sucha', 'reserved_Totkovicova', 'reserved_DDM Spirala', 'reserved_PS Perla', 'reserved_Dufkova - pulka drahy', 'reserved_Pavlovec', 'reserved_Sidorovich', 'reserved_OS DUFA',  'reserved_other', 'minute_of_day', 'year']
+        self.prediction_steps = 288
 
     def get_weather(self):
         """
@@ -156,7 +160,54 @@ class Predictor():
                 data_dict['hour'] += 1
 
         df = pd.DataFrame(data, columns=columns) 
-        return self.dh.build_timeseries(df, time_steps_back)
+        x,y = self.dh.build_timeseries(df, time_steps_back)
+        return self.dh.reformat_feature_list([x], [y], True)
+
+    def predict2(self, predictor, columns, data_dict, time_steps_back, lines_reservations=None):
+        
+        lines_reserved_id = -1
+        org_ids = dict()
+        for org_id, column in enumerate(columns):
+            if column.startswith('reserved_'):
+                org_ids[column] = org_id
+            if column == 'lines_reserved':
+                lines_reserved_id = org_id
+
+        if lines_reservations is None:
+            lines_reservations = ['']*64
+            
+        data = list()
+        for i in range(self.prediction_steps):
+            data.append([0]*len(columns))
+            for j, column in enumerate(columns):
+                if column in data_dict:
+                    data[i][j] = data_dict[column]
+
+            slot_id = (data_dict['minute_of_day']-360)//15
+            if slot_id >= 0 and slot_id < 64:
+                org_list = lines_reservations[slot_id].split(',')[:-1]
+                for name in org_list:
+                    feature_name = 'reserved_' + name
+                    if feature_name in columns:
+                        data[i][org_ids[feature_name]] += 1
+                    elif 'reserved_other' in columns:
+                        data[i][org_ids['reserved_other']] += 1
+                        
+                    if lines_reserved_id >= 0:
+                        data[i][lines_reserved_id] += 1
+                        
+            data_dict['minute'] += 5
+            data_dict['minute_of_day'] += 5
+            if data_dict['minute'] == 60:
+                data_dict['minute'] = 0
+                data_dict['hour'] += 1
+
+        df = pd.DataFrame(data, columns=columns) 
+        day = Day('ts')
+        day.data = df
+        x, y = self.dh.get_feature_vectors_from_days([day], [], time_steps_back, 1, True)
+        y_pred = self.dh.predict_day_from_features(x, predictor, time_steps_back)
+        return y_pred
     
     def daterange(self, start_date, end_date):
         """
@@ -176,15 +227,18 @@ class Predictor():
         slot_id = 0
         for hour in range(24):
             for minute in range(0,60,5):
+                # prediction = 0
+                # if day_of_week > 4:
+                #     if slot_id > 105 and hour < 22:
+                #         prediction = y_pred[pred_id]
+                #         pred_id+=1
+                # else:
+                #     if slot_id > 57 and hour < 22:
+                #         prediction = y_pred[pred_id]
+                #         pred_id+=1
                 prediction = 0
-                if day_of_week > 4:
-                    if slot_id > 105 and hour < 22:
-                        prediction = y_pred[pred_id]
-                        pred_id+=1
-                else:
-                    if slot_id > 57 and hour < 22:
-                        prediction = y_pred[pred_id]
-                        pred_id+=1
+                if hour < 23:
+                    prediction = int(y_pred[slot_id])
                 s += '2020-%02d-%02d %02d:%02d:00,%d,0\n'%(month,day,hour,minute,prediction)
                 slot_id += 1
         fn = '2020-%02d-%02d.csv'%(month,day)
@@ -198,13 +252,13 @@ class Predictor():
         """
         for single_day in self.daterange(start_date, end_date):
             if single_day.weekday() > 4:
-                start_minute = 480
-                start_hour = 8
-                self.prediction_steps = 169
+                start_minute = 0
+                start_hour = 0
+                self.prediction_steps = 288
             else:
-                self.prediction_steps = 217
-                start_hour = 4
-                start_minute = 240
+                self.prediction_steps = 288
+                start_hour = 0
+                start_minute = 0
                 
             data_dict = {
                 'month' : int(single_day.strftime('%m')),
@@ -224,22 +278,30 @@ class Predictor():
             for column in columns:
                 if column.startswith('reserved'):
                     data_dict[column] = 0
-            x, y = self.prepare_feature_vectors(columns, data_dict, time_steps_back,self.get_lines_usage_for_day(single_day))
-            y_pred = self.dh.predict_day_from_features(x, estimator, time_steps_back)
+            # x, y = self.prepare_feature_vectors(columns, data_dict, time_steps_back)
+            #x, y = self.prepare_feature_vectors(columns, data_dict, time_steps_back,self.get_lines_usage_for_day(single_day))
+            if start_date.weekday() < 5:
+                # y_pred = self.dh.predict_day_from_features(x, estimator.weekday_model, time_steps_back)
+                y_pred = self.predict2(estimator.weekday_model, columns, data_dict, time_steps_back, self.get_lines_usage_for_day(single_day))
+            else:
+                # y_pred = self.dh.predict_day_from_features(x, estimator.weekend_model, time_steps_back)
+                y_pred = self.predict2(estimator.weekend_model, columns, data_dict, time_steps_back, self.get_lines_usage_for_day(single_day))
+                print(y_pred)
             self.export_prediction(y_pred, single_day.weekday(), int(single_day.strftime('%m')), int(single_day.strftime('%d')))
 
 if __name__ == '__main__':
     p = Predictor()
     d = datetime.now()
-    clf = MyExtraTreesRegressor()
+    clf = DoubleExtraTreesRegressor()
 
     # clf.fit_on_training_set()
+    # clf.save_model()
     ########################################################
     # Or uncomanet line below and load already trained model
     ########################################################
     clf.load_model()
-
-    for i in range(5):
-        start_date = datetime.now() + timedelta(days=i)
-        end_date = datetime.now()+ timedelta(days=i+1)
-        p.generate_predictions(clf.model, start_date, end_date, 'export_'+clf.name, clf.columns, clf.time_steps_back)
+    # clf.show_n_predictions(2)
+    for i in range(19):
+        start_date = datetime.now() + timedelta(days=i) - timedelta(days=19)
+        end_date = datetime.now()+ timedelta(days=i+1) - timedelta(days=19)
+        p.generate_predictions(clf, start_date, end_date, 'export_'+clf.name, clf.columns, clf.time_steps_back)
