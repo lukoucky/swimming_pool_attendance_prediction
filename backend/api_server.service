@@ -1,0 +1,12 @@
+[Unit]
+Description=REST API server
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/home/backend
+ExecStart=/usr/bin/python /home/backend/main.py --ssl_cert "path_to_ssl_certificate_file" --ssl_key "path_to_ssl_key_file"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
