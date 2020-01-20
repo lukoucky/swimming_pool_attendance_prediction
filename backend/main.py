@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import json
 import argparse
 import pandas as pd
@@ -55,4 +57,4 @@ if __name__ == '__main__':
 	if args.ssl_cert is None or args.ssl_key is None:
 		parser.print_help()
 	else:
-		app.run(debug=True, host='0.0.0.0', ssl_context=(args.ssl_cert, args.ssl_key)
+		app.run(debug=True, host='0.0.0.0', ssl_context=(args.ssl_cert, args.ssl_key)) 	
