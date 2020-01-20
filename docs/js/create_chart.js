@@ -49,7 +49,7 @@ var config = {
     }
 };
 
-const server_address = 'https://80.211.145.114:5000'
+const server_address = 'https://lukoucky.com:5000'
 
 var config_copy = JSON.parse(JSON.stringify(config));
 var today_plus_week = new Date();
