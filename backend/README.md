@@ -3,7 +3,7 @@ Simple [flask](https://palletsprojects.com/p/flask/) server that provides REST A
 
 Server with real data and predictions runs on [https://lukoucky.com:5000](https://lukoucky.com:5000). So far it can only return real attendance with line reservations data or predictions from Monthly Average predictor and Extra Trees Regressor.
 
-Valid requests are:
+Valid requests for predictions and real attendance on January 12, 2020 are:
 * Attendance with line usage for single day:
   * Request: `https://lukoucky.com:5000/attendance/2020/01/12`
   * Response: `{"attendance": "0,0,0,0,0,0,10,34,....", "lines_reserved": "0,0,0,0,0,0,1,1,...."}`
