@@ -1,4 +1,5 @@
 import json
+import argparse
 import pandas as pd
 from functools import wraps
 from flask import Flask, jsonify, send_from_directory, redirect, request, current_app
@@ -16,25 +17,25 @@ def support_jsonp(f):
 			return f(*args, **kwargs)
 	return decorated_function
 
-@app.route('/attendance/<filename>', methods=['GET'])
+@app.route('/attendance/<year>/<month>/<day>', methods=['GET'])
 @support_jsonp
-def get_attendace(filename):
-	filepath = '/var/www/html/data/'+filename
+def get_attendace(year,month,day):
+	filepath = '/var/www/html/data/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
 	attendance = get_data(filepath,'pool')
 	lines = get_data(filepath,'lines_reserved')
 	return jsonify({'attendance':attendance, 'lines_reserved':lines})
 
-@app.route('/prediction/extra_trees/<filename>', methods=['GET'])
+@app.route('/prediction/extra_trees/<year>/<month>/<day>', methods=['GET'])
 @support_jsonp
-def get_extra_trees_prediction(filename):
-	filepath = '/var/www/html/data/prediction_extra_tree/'+filename
+def get_extra_trees_prediction(year,month,day):
+	filepath = '/var/www/html/data/prediction_extra_tree/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
 	prediction = get_data(filepath,'pool')
 	return jsonify({'prediction':prediction})
 
-@app.route('/prediction/average/<filename>', methods=['GET'])
+@app.route('/prediction/average/<year>/<month>/<day>', methods=['GET'])
 @support_jsonp
-def get_monthly_average_prediction(filename):
-	filepath = '/var/www/html/data/prediction_monthly_average/'+filename
+def get_monthly_average_prediction(year,month,day):
+	filepath = '/var/www/html/data/prediction_monthly_average/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
 	prediction = get_data(filepath,'pool')
 	return jsonify({'prediction':prediction})
 
@@ -46,4 +47,12 @@ def get_data(filepath, column):
 	return values[:-1]
 
 if __name__ == '__main__':
-	app.run(debug=True, host='0.0.0.0', ssl_context=('/home/cert/server.crt', '/home/cert/server.key'))
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--ssl_cert', type=str, default=None, required=True, metavar='c', help='Path to ssl certificate file')
+	parser.add_argument('--ssl_key', type=str, default=None, required=True, metavar='k', help='Path to ssl key file')
+
+	args = parser.parse_args()
+	if args.ssl_cert is None or args.ssl_key is None:
+		parser.print_help()
+	else:
+		app.run(debug=True, host='0.0.0.0', ssl_context=(args.ssl_cert, args.ssl_key)

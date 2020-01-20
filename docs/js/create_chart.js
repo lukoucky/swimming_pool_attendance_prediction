@@ -102,7 +102,8 @@ $(window).on('load', function() {
 
 
 function updateChart(date_string){
-    var csv_url = server_address+'/attendance/'+date_string+'.csv';
+    var day_api_string = date_string.split('-').join('/');
+    var csv_url = server_address+'/attendance/'+day_api_string;
 
     $.ajax({
         type: "GET",  
@@ -111,8 +112,8 @@ function updateChart(date_string){
         success: function(response)  
         {
             generateChart(response, config, date_string);
-            addDataFromCSV(server_address+'/prediction/average/'+date_string+'.csv', 'rgba(67, 175, 105,0.9)', 'Monthly Average');
-            addDataFromCSV(server_address+'/prediction/extra_trees/'+date_string+'.csv', 'rgba(102, 46, 155,0.9)', 'Extra Trees Regressor');
+            addDataFromCSV(server_address+'/prediction/average/'+day_api_string, 'rgba(67, 175, 105,0.9)', 'Monthly Average');
+            addDataFromCSV(server_address+'/prediction/extra_trees/'+day_api_string, 'rgba(102, 46, 155,0.9)', 'Extra Trees Regressor');
             // addDataFromCSV('data/prediction_random_forest/'+date_string+'.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Regressor');
             // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(67, 175, 105,0.9)', 'Hidden Markov Model');
             // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(14,124,123,0.9)', 'Long Short Term Memory');
