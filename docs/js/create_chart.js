@@ -60,6 +60,18 @@ const algorithm = {
     LSTM: 'LSTM'
 }
 
+const pool_data = {
+    PEOPLE: 'Attendance',
+    LINES: 'Reserved lines'
+}
+
+const chart_color = {}
+chart_color[algorithm.AVG] = 'rgba(67, 175, 105,0.9)';
+chart_color[algorithm.EXTRA] = 'rgba(102, 46, 155,0.9)';
+chart_color[algorithm.LSTM] = 'rgba(14,124,123,0.9)';
+chart_color[pool_data.PEOPLE] = 'rgba(234,53,70,1)';
+chart_color[pool_data.LINES] = 'rgba(0,0,255,0)';
+
 const server_address = 'https://lukoucky.com:5000'
 
 var real_attendance = [];
@@ -114,8 +126,8 @@ function updateChart(date_string){
             generateChart(response, config, date_string);
             real_attendance = response.attendance.split(',');
 
-            addDataFromCSV(server_address+'/prediction/average/'+day_api_string, 'rgba(67, 175, 105,0.9)', algorithm.AVG);
-            addDataFromCSV(server_address+'/prediction/extra_trees/'+day_api_string, 'rgba(102, 46, 155,0.9)', algorithm.EXTRA);
+            addDataFromCSV(server_address+'/prediction/average/'+day_api_string, algorithm.AVG);
+            addDataFromCSV(server_address+'/prediction/extra_trees/'+day_api_string, algorithm.EXTRA);
             // addDataFromCSV('data/prediction_random_forest/'+date_string+'.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Regressor');
             // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(67, 175, 105,0.9)', 'Hidden Markov Model');
             // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(14,124,123,0.9)', 'Long Short Term Memory');
@@ -147,8 +159,8 @@ function resetCanvas(){
 
 
 function generateChart(data, conf, date_string){
-    addData(conf, data.attendance.split(','), "people", false);
-    addData(conf, data.lines_reserved.split(','), "lines", false);
+    addData(conf, data.attendance.split(','), false, pool_data.PEOPLE);
+    addData(conf, data.lines_reserved.split(','), false, pool_data.LINES);
 
     conf.data.labels = generate_time_array(date_string);
 
@@ -156,7 +168,7 @@ function generateChart(data, conf, date_string){
     window.myLine = new Chart(ctx, conf);
 }
 
- function addDataFromCSV(data_path, color, algorithm){
+ function addDataFromCSV(data_path, algorithm){
     $.ajax({
     type: "GET",  
     url: data_path,
@@ -164,24 +176,14 @@ function generateChart(data, conf, date_string){
     success: function(response)  
     {
         prediction = response.prediction.split(',')
-        addData(window.myLine, prediction, "people", true, color, algorithm);
+        addData(window.myLine, prediction, true, algorithm);
         compute_mse(algorithm, prediction);
     }   
     });   
  }
 
- function addData(chart, data, type, updateNow, color, title) {
-    color = color || "rgba(234,53,70,1)"
-    title = title || 'Actual attendance'
-    if(type == 'people'){
-    chart.data.datasets.push({
-            label: title,
-            backgroundColor: color,
-            borderColor: color,
-            data: data,
-            fill: false,
-            yAxisID: 'A'})
-    }else{
+function addData(chart, data, updateNow, data_type) {
+    if(data_type == pool_data.LINES){
         chart.data.datasets.push({
             label: "Reserved lines",
             fill: true,
@@ -191,7 +193,15 @@ function generateChart(data, conf, date_string){
             yAxisID: 'B',
             steppedLine: true,
             radius: 0,
-        })
+        });
+    }else{
+        chart.data.datasets.push({
+            label: data_type,
+            backgroundColor: chart_color[data_type],
+            borderColor: chart_color[data_type],
+            data: data,
+            fill: false,
+            yAxisID: 'A'});
     }
 
     if(updateNow)
