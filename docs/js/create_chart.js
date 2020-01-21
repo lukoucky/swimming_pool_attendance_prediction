@@ -13,7 +13,12 @@ var config = {
         },
         legend: {
             display: true,
-            position: 'right',
+            position: 'top',
+            labels: {
+                boxWidth: 35,
+                fontSize: 15,
+                fontStyle: 'bold'
+            }
         },
         hover: {
             mode: 'nearest',
