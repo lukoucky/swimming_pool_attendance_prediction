@@ -64,14 +64,8 @@ var picker = new Pikaday(
         maxDate: today_plus_week,
         yearRange: [2017,2020],
         toString(date, format) {
-            var day = date.getDate();
-            if(Number(day) < 10){
-                day = '0'+day;
-            }
-            var month = date.getMonth() + 1;
-            if(Number(month) < 10){
-                month = '0'+month;
-            }
+            var day = date.getDate().toString().padStart(2, '0');;
+            var month = (date.getMonth() + 1).toString().padStart(2, '0');;
             var year = date.getFullYear();
             return `${year}-${month}-${day}`;
         }
@@ -86,16 +80,8 @@ $( "#datepicker" ).change(function() {
 
 $(window).on('load', function() {
     var d = new Date();
-    var month = String(d.getMonth()+1);
-
-    if(Number(month) < 10){
-        month = '0'+month;
-    }
-    var day = d.getDate();
-    if(Number(day) < 10){
-        day = '0'+day;
-    }
-
+    var month = String(d.getMonth()+1).padStart(2, '0');
+    var day = d.getDate().toString().padStart(2, '0');
     var today = d.getFullYear()+'-'+month+'-'+day;
     updateChart(today);
 });
@@ -186,16 +172,10 @@ function generateChart(data, conf, date_string){
 
 function generate_time_array(date_string){
     var ids = [];
-
-    const d = new Date(date_string+' 00:00');
-    for (var i = 0; i < 288; i++) {
-        var time_string = new Date(d.getTime() + i*5*60000).toLocaleTimeString().slice(0,-3);
-        if(time_string.startsWith('0')){
-            ids.push(time_string.slice(1));
-        }else{
-            ids.push(time_string);
+    for (var hour = 0; hour < 24; hour++){
+        for (var minute = 0; minute < 60; minute+=5){
+            ids.push(hour+':'+minute.toString().padStart(2, '0'));
         }
     }
-
     return ids;
 }
