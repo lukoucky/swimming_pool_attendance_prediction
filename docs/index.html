@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Šutka swimming pool occupancy prediction</title>
+        <title>Šutka swimming pool attendence prediction</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
         <script type="text/javascript" src="js/jquery-3.2.1.js"></script>
@@ -13,14 +13,14 @@
         
     </head>
     <body>
-        <h1>Šutka swimming pool occupancy prediction</h1>
+        <h1>Šutka swimming pool attendence prediction</h1>
         <input style="display: none" type="text" id="datepicker">
         <div class="row">
           <div id="calendar-container" style="padding-left:10%;" class="column"></div>
           <div class="column">
-            <p>Welcome to Šutka swimming pool occupancy predictor. This page predicts how many people will visit Šutka swimming pool. It uses machine learning algorithms that learns from historical data of pool ocupancy, reserved lines, weather and national holidays and predicts future occupancy.</p>
-            <p>You can choose date in the calendar on the left and see the prediction in the chart below. Predictions are generated up to a week in to the future. For the dates in past you can compare real occupancy with our predictions.</p>
-            <p>There are three different algorithms predicting occupancy - each with the different color in chart below. You can toggle on/off the prediction by clicking on the name of algorithm on right side of the chart.</p>
+            <p>Welcome to Šutka swimming pool attendence predictor. This page predicts how many people will visit Šutka swimming pool each day. It uses machine learning algorithms that learns from historical data of pool attendance, reserved lines, weather and national holidays and predicts future attendence.</p>
+            <p>You can choose date in the calendar on the left and see the prediction in the chart below. Predictions are generated up to a week in to the future. For the dates in past you can compare real attendence with our predictions.</p>
+            <p>So far there are two different algorithms predicting attendence - each with the different color in chart below. You can toggle on/off the prediction by clicking on the name of algorithm on top of the chart.</p>
           </div>
         </div>
         <div id="graph-container" style="width:94%; padding-left:2%;">
@@ -29,7 +29,7 @@
         <p>Mean Squared Error of prediction algorithms: </p>
         <ul id='mse'>
         </ul>
-        <p>Note: Horizontal axis represents time of the day, Vertical on the left represents occupacncy, vertical on the right number of reserved lines. Red line represents real occupacny, other colors represents prediction. Blue boxes represents number of reserved lines. If the chart is missing something went wrong with the data - please refresh the page.</p>
+        <p>Note: Horizontal axis represents time of the day, Vertical on the left represents attendence, vertical on the right number of reserved lines. Red line represents real attendence, other colors represents prediction. Blue boxes represents number of reserved lines. If the chart is missing something went wrong with the data - please refresh the page.</p>
     </body>
     <script type="text/javascript" src="js/create_chart.js"></script>
 </html>
