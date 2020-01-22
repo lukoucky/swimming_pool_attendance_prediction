@@ -24,3 +24,7 @@ h1 {
 .column {
   flex: 80%;
 }
+
+.pika-single {
+  border: 0px;
+}
