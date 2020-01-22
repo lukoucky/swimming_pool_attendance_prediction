@@ -16,8 +16,8 @@ var config = {
             position: 'top',
             labels: {
                 boxWidth: 35,
-                fontSize: 15,
-                fontStyle: 'bold'
+                fontSize: 16,
+                fontColor: '#F0F0F0'
             }
         },
         hover: {
@@ -25,19 +25,33 @@ var config = {
             intersect: true
         },
         scales: {
+            scaleLabel: [{fontSize:20}],
             xAxes: [{
                 ticks:{
-                    maxTicksLimit: 32,
-            }}],  
+                    maxTicksLimit: 16,
+                    fontSize:16,
+                    fontColor: '#F0F0F0'
+                },
+                gridLines: {
+                  display : false
+                }
+            }],  
             yAxes: [{
                 id: 'A',
                 position: 'left',
                 display: true,
+                gridLines: {
+                  drawBorder: false,
+                  zeroLineColor: 'rgba(240,240,240,0.1)',
+                  color: 'rgba(240,240,240,0.05)'
+                },
                 ticks: {
                     beginAtZero: true,
                     steps: 10,
                     stepValue: 30,
                     max: 350,
+                    fontSize:16,
+                    fontColor: '#F0F0F0'
                 }
                 },{
                 id: 'B',
@@ -47,8 +61,15 @@ var config = {
                     beginAtZero: true,
                     steps: 7,
                     stepValue: 1,
-                    max: 7
-                }
+                    max: 7,
+                    fontSize:16,
+                    fontColor: '#F0F0F0'
+                },
+                gridLines: {
+                  drawBorder: false,
+                  zeroLineColor: 'transparent',
+                  color: 'rgba(240,240,240,0.05)'
+                },
                 }]
         }
     }
@@ -66,13 +87,17 @@ const pool_data = {
 }
 
 const chart_color = {}
-chart_color[algorithm.AVG] = 'rgba(67, 175, 105,0.9)';
-chart_color[algorithm.EXTRA] = 'rgba(102, 46, 155,0.9)';
+chart_color[algorithm.AVG] = 'rgba(46,196,182 ,0.9)';
+chart_color[algorithm.EXTRA] = 'rgba(255,159,28,0.9)';
 chart_color[algorithm.LSTM] = 'rgba(14,124,123,0.9)';
-chart_color[pool_data.PEOPLE] = 'rgba(234,53,70,1)';
+chart_color[pool_data.PEOPLE] = 'rgba(231,29,54,0.7)';
 chart_color[pool_data.LINES] = 'rgba(0,0,255,0)';
 
 const server_address = 'https://lukoucky.com:5000'
+
+
+
+
 
 var real_attendance = [];
 
@@ -187,8 +212,8 @@ function addData(chart, data, updateNow, data_type) {
         chart.data.datasets.push({
             label: "Reserved lines",
             fill: true,
-            backgroundColor: "rgba(48,188,237,0.25)",
-            borderColor: "rgba(0,0,255,0)",
+            backgroundColor: "rgba(5,107,191,0.25)",
+            borderColor: "rgba(5,107,191,0.35)",
             data: data,
             yAxisID: 'B',
             steppedLine: true,
