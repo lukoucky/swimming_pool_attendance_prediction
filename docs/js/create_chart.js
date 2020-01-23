@@ -5,6 +5,17 @@ var config = {
         datasets: []
     },
     options: {
+        animation: {
+            duration: 0 // disable animation
+        },
+        elements: {
+            line: {
+                tension: 0.5 // bezier curves setting
+            },
+            point:{
+                radius: 0 // disable points on line
+            }
+        },
         responsive: true,
         tooltips: {
             mode: 'index',
@@ -13,7 +24,7 @@ var config = {
         },
         legend: {
             display: true,
-            position: 'top',
+            position: 'bottom',
             labels: {
                 boxWidth: 35,
                 fontSize: 16,
@@ -94,10 +105,22 @@ chart_color[pool_data.PEOPLE] = 'rgba(231,29,54,0.7)';
 chart_color[pool_data.LINES] = 'rgba(0,0,255,0)';
 
 const server_address = 'https://lukoucky.com:5000'
+const month_names = {
+    1: "Jan",
+    2: "Feb",
+    3: "Mar",
+    4: "Apr",
+    5: "May",
+    6: "Jun",
+    7: "Jul",
+    8: "Aug",
+    9: "Sep",
+    10: "Oct",
+    11: "Nov",
+    12: "Dec"
+}
 
-
-
-
+var selected_date = '2020-01-01';
 
 var real_attendance = [];
 
@@ -114,19 +137,23 @@ var picker = new Pikaday(
         maxDate: today_plus_week,
         yearRange: [2017,2020],
         toString(date, format) {
-            var day = date.getDate().toString().padStart(2, '0');;
-            var month = (date.getMonth() + 1).toString().padStart(2, '0');;
+            var day = date.getDate().toString().padStart(2, '0');
+            var month = (date.getMonth() + 1).toString().padStart(2, '0');
             var year = date.getFullYear();
             return `${year}-${month}-${day}`;
         }
     });
 
 $( "#datepicker" ).change(function() {
-  console.log("datepicker change to "+document.getElementById('datepicker').value);
-  var today = picker.toString('YYYY-MM-DD');
-  document.getElementById('mse').innerHTML = '';
-  resetCanvas();
-  updateChart(today);
+    console.log("datepicker change to "+document.getElementById('datepicker').value);
+    var today = picker.toString('YYYY-MM-DD');
+    document.getElementById('day_id').innerHTML = today.split(8);
+    document.getElementById('month_id').innerHTML = month_names[Number(today.split(5,7))];
+    document.getElementById('year_id').innerHTML = today.split(0,4);
+
+    document.getElementById('mse').innerHTML = '';
+    resetCanvas();
+    updateChart(today);
 });
 
 $(window).on('load', function() {
@@ -134,6 +161,10 @@ $(window).on('load', function() {
     var month = String(d.getMonth()+1).padStart(2, '0');
     var day = d.getDate().toString().padStart(2, '0');
     var today = d.getFullYear()+'-'+month+'-'+day;
+    document.getElementById('day_id').innerHTML = day;
+    document.getElementById('month_id').innerHTML = month_names[d.getMonth()+1];
+    document.getElementById('year_id').innerHTML = d.getFullYear();
+    selected_date = today;
     updateChart(today);
 });
 
@@ -162,7 +193,7 @@ function updateChart(date_string){
     config.options.scales.xAxes[0].ticks.max = '22:00';
 }
 
-function compute_mse(algorithm, prediction){
+function compute_mse(algorithm_name, prediction){
     total = 0;
     n = 0;
     for(var i = 72; i < 264; i++){
@@ -172,7 +203,23 @@ function compute_mse(algorithm, prediction){
             n += 1;
         }
     }
-    document.getElementById('mse').innerHTML += '<li>'+algorithm+': '+Number(total/n).toFixed(0)+'</li>';
+    rmse = Math.pow(Number(total/n),0.5).toFixed(0).toString();
+    if(rmse=='NaN'){
+        rmse = '--'
+    }
+    switch(algorithm_name){
+        case algorithm.AVG:
+            document.getElementById('mse_avg').innerHTML = 'RMSE: '+rmse;
+            break;
+        case algorithm.EXTRA:
+            document.getElementById('mse_extra').innerHTML = 'RMSE: '+rmse;
+            break;
+        case algorithm.LSTM:
+            document.getElementById('mse_lstm').innerHTML = 'RMSE: '+rmse;
+            break;   
+        default:
+            console.log('Unknown algorithm: '+algorithm_name);
+    }
 }
 
 function resetCanvas(){
@@ -200,7 +247,11 @@ function generateChart(data, conf, date_string){
     dataType: "jsonp",       
     success: function(response)  
     {
-        prediction = response.prediction.split(',')
+        str_prediction = response.prediction.split(',');
+        prediction = [];
+        for (var i = 0; i < str_prediction.length; i++){
+            prediction.push(parseInt(str_prediction[i]));
+        }
         addData(window.myLine, prediction, true, algorithm);
         compute_mse(algorithm, prediction);
     }   
@@ -217,6 +268,7 @@ function addData(chart, data, updateNow, data_type) {
             data: data,
             yAxisID: 'B',
             steppedLine: true,
+            borderWidth: 1,
             radius: 0,
         });
     }else{
@@ -226,6 +278,7 @@ function addData(chart, data, updateNow, data_type) {
             borderColor: chart_color[data_type],
             data: data,
             fill: false,
+            borderWidth: 3,
             yAxisID: 'A'});
     }
 
@@ -244,3 +297,26 @@ function generate_time_array(date_string){
     }
     return ids;
 }
+
+function right_arrow_date_on_click(){
+    set_date_with_offset(1);
+}
+
+function left_arrow_date_on_click(){
+    set_date_with_offset(-1);
+}
+
+function set_date_with_offset(offset){
+    var new_date = new Date(selected_date);
+    new_date.setDate(new_date.getDate() + offset);
+    var year = String(new_date.getFullYear());
+    var month = String(new_date.getMonth()+1).padStart(2, '0');
+    var day = new_date.getDate().toString().padStart(2, '0');
+    document.getElementById('day_id').innerHTML = day;
+    document.getElementById('month_id').innerHTML = month_names[Number(month)];
+    document.getElementById('year_id').innerHTML = new_date.getFullYear();
+    selected_date = year+'-'+month+'-'+day;
+    resetCanvas();
+    updateChart(selected_date);
+}
+

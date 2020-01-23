@@ -16,14 +16,31 @@ h1 {
   font-weight: 100;
 }
 
+.btn {
+  border: none;
+  background-color: inherit;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.btn:hover {color: #fff;}
+
+.column_big_date {
+  float: left;
+  width: 40%;
+}
 .column {
   float: left;
-  width: 25%;
+  width: 20%;
 }
 
 .column_date {
   float: left;
-  width: 50%;
+}
+.column_arrow {
+  float: left;
+  width: 3vw;
+  margin-right: 2vw;
 }
 
 .pika-single {
@@ -35,6 +52,14 @@ h1 {
   margin: 0;
   color: rgb(240,240,240);
   font-weight: 700;
+}
+
+.date_arrow {
+  font-size: 5vw;
+  margin: 0;
+  color: rgb(240,240,240);
+  font-weight: 700;
+  padding-top: 2.2vw;
 }
 
 .date_month {
@@ -72,4 +97,29 @@ h1 {
   font-size: 1vw;
   margin: 0;
   color: rgb(240,240,240);
+}
+
+.color_avg{
+  color: rgb(46,196,182);
+}
+
+.color_extra{
+  color: rgb(255,159,28);
+}
+
+.color_lstm{
+  color: rgb(200, 200, 200);
+}
+
+.copyright_caption{
+  font-size: 1vw;
+  font-weight: 200;
+  color: rgb(240,240,240);
+}
+
+.container{
+  /*max-width: 1200px;*/
+  /*margin: auto;*/
+  /*border: 3px solid #73AD21;*/
+  /*position:relative*/
 }
