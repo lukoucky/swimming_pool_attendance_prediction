@@ -168,6 +168,16 @@ $(window).on('load', function() {
     updateChart(today);
 });
 
+document.onkeydown = function(event) {
+    switch (event.keyCode) {
+        case 37:
+            left_arrow_date_on_click();
+            break;
+        case 39:
+            right_arrow_date_on_click();
+            break;
+    }
+};
 
 function updateChart(date_string){
     var day_api_string = date_string.split('-').join('/');
