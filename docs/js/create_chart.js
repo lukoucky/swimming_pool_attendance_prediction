@@ -234,7 +234,6 @@ function compute_mse(algorithm_name, prediction){
 
 function resetCanvas(){
   const myNode = document.getElementById("graph-container");
-  myNode.innerHTML = '<canvas id="today"></canvas>';
   window.myLine = null;
   config = JSON.parse(JSON.stringify(config_copy));
 };
