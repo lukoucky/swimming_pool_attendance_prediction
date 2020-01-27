@@ -41,11 +41,28 @@ def get_monthly_average_prediction(year,month,day):
 	prediction = get_data(filepath,'pool')
 	return jsonify({'prediction':prediction})
 
+@app.route('/get_all_for/<year>/<month>/<day>', methods=['GET'])
+@support_jsonp
+def get_all_for(year,month,day):
+	filepath = '/var/www/html/data/prediction_extra_tree/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
+	prediction_extra = get_data(filepath,'pool')
+
+	filepath = '/var/www/html/data/prediction_monthly_average/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
+	prediction_avg = get_data(filepath,'pool')
+
+	filepath = '/var/www/html/data/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
+	attendance = get_data(filepath,'pool')
+	lines = get_data(filepath,'lines_reserved')
+	return jsonify({'attendance':attendance, 'lines_reserved':lines, 'prediction':{'monthly_average':prediction_avg, 'extra_trees':prediction_extra}})
+
 def get_data(filepath, column):
 	df = pd.read_csv(filepath)
 	values = ''
 	for i, row in df.iterrows():
-		values += str(row[column])+','
+		if pd.isna(row[column]):
+			values += 'nan,'
+		else:
+			values += str(int(row[column]))+','
 	return values[:-1]
 
 if __name__ == '__main__':
