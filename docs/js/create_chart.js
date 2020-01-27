@@ -41,7 +41,9 @@ var config = {
                 ticks:{
                     maxTicksLimit: 16,
                     fontSize:16,
-                    fontColor: '#F0F0F0'
+                    fontColor: '#F0F0F0',
+                    min: '6:00',
+                    max: '22:00'
                 },
                 gridLines: {
                   display : false
@@ -152,7 +154,6 @@ $( "#datepicker" ).change(function() {
     document.getElementById('year_id').innerHTML = today.split(0,4);
 
     document.getElementById('mse').innerHTML = '';
-    resetCanvas();
     updateChart(today);
 });
 
@@ -165,42 +166,20 @@ $(window).on('load', function() {
     document.getElementById('month_id').innerHTML = month_names[d.getMonth()+1];
     document.getElementById('year_id').innerHTML = d.getFullYear();
     selected_date = today;
-    updateChart(today);
+    var ctx = document.getElementById("today").getContext("2d");
+    window.myLine = new Chart(ctx, config);
+    update_chart(today, true);
 });
 
-document.onkeydown = function(event) {
-    switch (event.keyCode) {
-        case 37:
-            left_arrow_date_on_click();
-            break;
-        case 39:
-            right_arrow_date_on_click();
-            break;
-    }
-};
-
-function updateChart(date_string){
-    var day_api_string = date_string.split('-').join('/');
-    var csv_url = server_address+'/attendance/'+day_api_string;
-
-    $.ajax({
-        type: "GET",  
-        url: csv_url,
-        dataType: "jsonp",       
-        success: function(response)  
+function change_data(data, name)
+{
+    for(var i = 0; i < window.myLine.config.data.datasets.length; i++)
+    {
+        if(window.myLine.config.data.datasets[i].label == name)
         {
-            generateChart(response, config, date_string);
-            real_attendance = response.attendance.split(',');
-
-            addDataFromCSV(server_address+'/prediction/average/'+day_api_string, algorithm.AVG);
-            addDataFromCSV(server_address+'/prediction/extra_trees/'+day_api_string, algorithm.EXTRA);
-            // addDataFromCSV('data/prediction_random_forest/'+date_string+'.csv', 'rgba(248, 102, 36,0.9)', 'Random Forest Regressor');
-            // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(67, 175, 105,0.9)', 'Hidden Markov Model');
-            // addDataFromCSV('data/test/prediction_algo2/2019-11-02.csv', 'rgba(14,124,123,0.9)', 'Long Short Term Memory');
-        }   
-    });
-    config.options.scales.xAxes[0].ticks.min = '6:00';
-    config.options.scales.xAxes[0].ticks.max = '22:00';
+            window.myLine.config.data.datasets[i].data = data;
+        }
+    }
 }
 
 function compute_mse(algorithm_name, prediction){
@@ -232,44 +211,42 @@ function compute_mse(algorithm_name, prediction){
     }
 }
 
-function resetCanvas(){
-  const myNode = document.getElementById("graph-container");
-  window.myLine = null;
-  config = JSON.parse(JSON.stringify(config_copy));
-};
-
-
-function generateChart(data, conf, date_string){
-    addData(conf, data.attendance.split(','), false, pool_data.PEOPLE);
-    addData(conf, data.lines_reserved.split(','), false, pool_data.LINES);
-
-    conf.data.labels = generate_time_array(date_string);
-
-    var ctx = document.getElementById("today").getContext("2d");
-    window.myLine = new Chart(ctx, conf);
+function clear_chart()
+{
+    for(var i = 0; i < window.myLine.config.data.datasets.length; i++)
+    {
+        window.myLine.config.data.datasets[i].data = [];
+    }
+    window.myLine.update();
 }
 
- function addDataFromCSV(data_path, algorithm){
+function generate_prediction(data_path, algorithm, generate_new){
     $.ajax({
-    type: "GET",  
-    url: data_path,
-    dataType: "jsonp",       
-    success: function(response)  
-    {
-        str_prediction = response.prediction.split(',');
-        prediction = [];
-        for (var i = 0; i < str_prediction.length; i++){
-            prediction.push(parseInt(str_prediction[i]));
-        }
-        addData(window.myLine, prediction, true, algorithm);
-        compute_mse(algorithm, prediction);
-    }   
+        type: "GET",  
+        url: data_path,
+        dataType: "jsonp",       
+        success: function(response)  
+        {
+            str_prediction = response.prediction.split(',');
+            prediction = [];
+            for (var i = 0; i < str_prediction.length; i++){
+                prediction.push(parseInt(str_prediction[i]));
+            }
+            if(generate_new){
+                addData(window.myLine, prediction, true, algorithm);
+            }
+            else
+            {
+                change_data(prediction, algorithm);
+            }
+            compute_mse(algorithm, prediction);
+        }   
     });   
- }
+}
 
-function addData(chart, data, updateNow, data_type) {
+function add_data(data, data_type) {
     if(data_type == pool_data.LINES){
-        chart.data.datasets.push({
+        window.myLine.data.datasets.push({
             label: "Reserved lines",
             fill: true,
             backgroundColor: "rgba(5,107,191,0.25)",
@@ -281,7 +258,7 @@ function addData(chart, data, updateNow, data_type) {
             radius: 0,
         });
     }else{
-        chart.data.datasets.push({
+        window.myLine.data.datasets.push({
             label: data_type,
             backgroundColor: chart_color[data_type],
             borderColor: chart_color[data_type],
@@ -289,11 +266,6 @@ function addData(chart, data, updateNow, data_type) {
             fill: false,
             borderWidth: 3,
             yAxisID: 'A'});
-    }
-
-    if(updateNow)
-    {
-        chart.update();
     }
 }
 
@@ -325,7 +297,40 @@ function set_date_with_offset(offset){
     document.getElementById('month_id').innerHTML = month_names[Number(month)];
     document.getElementById('year_id').innerHTML = new_date.getFullYear();
     selected_date = year+'-'+month+'-'+day;
-    resetCanvas();
-    updateChart(selected_date);
+    update_chart(selected_date);
 }
 
+function update_chart(date_string, generate_new = false){
+    var day_api_string = date_string.split('-').join('/');
+    var csv_url = server_address+'/get_all_for/'+day_api_string;
+
+    $.ajax({
+        type: "GET",  
+        url: csv_url,
+        dataType: "jsonp",       
+        success: function(response)  
+        {
+            prediction_avg = response.prediction.monthly_average.split(',');
+            prediction_extra = response.prediction.extra_trees.split(',');
+            real_attendance = response.attendance.split(',');
+            if(generate_new){
+                window.myLine.data.labels = generate_time_array(date_string);
+                add_data(response.attendance.split(','), pool_data.PEOPLE);
+                add_data(response.lines_reserved.split(','), pool_data.LINES);
+                add_data(prediction_avg, algorithm.AVG);
+                add_data(prediction_extra, algorithm.EXTRA);
+            }
+            else
+            {
+                change_data(real_attendance, pool_data.PEOPLE);
+                change_data(response.lines_reserved.split(','), pool_data.LINES);
+                change_data(prediction_avg, algorithm.AVG);
+                change_data(prediction_extra, algorithm.EXTRA);
+            }
+            
+            compute_mse(algorithm.AVG, prediction_avg);
+            compute_mse(algorithm.EXTRA, prediction_extra);
+            window.myLine.update();
+        }   
+    });
+}
