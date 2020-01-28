@@ -27,20 +27,20 @@ h1 {
 
 .column_big_date {
   float: left;
-  width: 40%;
+  width: 45%;
 }
 .column {
   float: left;
-  width: 20%;
+  width: 18%;
+}
+
+.row{
+  margin-left: 7vw;
+  padding-bottom: 10vw;
 }
 
 .column_date {
   float: left;
-}
-.column_arrow {
-  float: left;
-  width: 3vw;
-  margin-right: 2vw;
 }
 
 .pika-single {
@@ -115,6 +115,7 @@ h1 {
   font-size: 1vw;
   font-weight: 200;
   color: rgb(240,240,240);
+  text-align: center;
 }
 
 .container{
@@ -122,4 +123,29 @@ h1 {
   /*margin: auto;*/
   /*border: 3px solid #73AD21;*/
   /*position:relative*/
+}
+
+#left_arrow{
+  float: left;
+}
+
+#graph-container{
+  width:96%; 
+  padding-left:2%;
+}
+
+.github_img{
+  position:fixed;
+  left:5px;
+  bottom:5px;
+}
+
+.help_sign{
+  position:fixed;
+  right:5px;
+  bottom:5px;
+  margin:0;
+  margin-top:-10px;
+  font-size:45px;
+  color:rgb(250,250,250);
 }

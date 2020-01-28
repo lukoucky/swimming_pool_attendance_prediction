@@ -1,42 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <title>Šutka swimming pool attendence prediction</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <style>@import url('https://fonts.googleapis.com/css?family=Titillium+Web:200,300,700&display=swap');</style>
 
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.8.0/pikaday.min.js"></script>
+
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.8.0/css/pikaday.min.css">
         <link rel="stylesheet" href="css/style.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.8.0/pikaday.min.js"></script>
-        
     </head>
     <body>
         <div class="container">
-        <a href="https://github.com/lukoucky/swimming_pool_attendance_prediction"><img src="imgs/GitHub-Mark-Light-32px.png" alt="GitHub" style="position:fixed;left:5px;bottom:5px"></a>
-        <button class="btn" style="position:fixed;right:5px;bottom:5px;margin:0;margin-top:-10px;font-size:45px;color:rgb(250,250,250);"><b>?</b></button>
-        <h1>Šutka swimming pool attendence prediction</h1>
-        <!-- <input style="display: none" type="text" id="datepicker"> -->
-        <div class="row"; style="margin-left: 10vw;padding-bottom: 10vw;">
-          <!-- <div id="calendar-container" style="padding-left:10%;" class="column"></div> -->
-            <div class="column_big_date">  
-                <div class="row_date">
-                    <div class="column_arrow" align="right"><button class="btn date_arrow" id="left_arrow" onclick="left_arrow_date_on_click()"><</button></div>
-                    <div class="column_date" align="right"><p class="date_day" id="day_id">01</p></div>
-                    <div class="column_date"><p class="date_month" id="month_id">Jan</p><p class="date_year" id="year_id">2017</p></div>
-                    <div class="column_arrow" align="left"><button class="btn date_arrow" id="right_arrow" onclick="right_arrow_date_on_click()">></button></div>
+            <a href="https://github.com/lukoucky/swimming_pool_attendance_prediction"><img src="imgs/GitHub-Mark-Light-32px.png" alt="GitHub" class="github_img"></a>
+            <button class="btn help_sign"><b>?</b></button>
+            <h1>Šutka swimming pool attendence prediction</h1>
+            <!-- <input style="display: none" type="text" id="datepicker"> -->
+            <div class="row">
+              <!-- <div id="calendar-container" style="padding-left:10%;" class="column"></div> -->
+                <div class="column_big_date">  
+                    <div class="row_date">
+                        <button class="btn date_arrow" id="left_arrow" onclick="left_arrow_date_on_click()">&lt;</button>
+                        <div class="column_date"><p class="date_day" id="day_id">01</p></div>
+                        <div class="column_date"><p class="date_month" id="month_id">Jan</p><p class="date_year" id="year_id">2017</p></div>
+                        <button align="right" class="btn date_arrow" id="right_arrow" onclick="right_arrow_date_on_click()">&gt;</button>
+                    </div>
                 </div>
+                <div class="column"><p class="algo_name color_avg"><b>MONTHLY AVG</b></p><p class="algo_mse" id="mse_avg">RMSE: --</p></div>
+                <div class="column"><p class="algo_name color_extra"><b>EXTRA TREES</b></p><p class="algo_mse" id="mse_extra">RMSE: --</p></div>
+                <div class="column"><p class="algo_name color_lstm"><b>LSTM</b></p><p class="algo_mse color_lstm" id="mse_lstm">RMSE: --</p></div>
             </div>
-            <div class="column"><p class="algo_name color_avg"><b>MONTHLY AVG</b></p><p class="algo_mse" id="mse_avg">RMSE: --</p></div>
-            <div class="column"><p class="algo_name color_extra"><b>EXTRA TREES</b></p><p class="algo_mse" id="mse_extra">RMSE: --</p></div>
-            <div class="column"><p class="algo_name color_lstm"><b>LSTM</b></p><p class="algo_mse color_lstm" id="mse_lstm">RMSE: --</p></div>
-        </div>
-        <div id="graph-container" style="width:94%; padding-left:2%;">
-            <canvas id="today"></canvas>
+            <div id="graph-container">
+                <canvas id="today"></canvas>
+            </div>
+            <p class="copyright_caption">Lukas Koucky 2020<p>
         </div>
     </body>
-    <script type="text/javascript" src="js/create_chart.js"></script>
-    <p class="copyright_caption" align="center">Lukas Koucky 2020<p>
-    </div>
+    <script src="js/create_chart.js"></script>
 </html>
