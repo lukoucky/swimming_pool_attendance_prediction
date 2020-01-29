@@ -1,101 +1,169 @@
-from models.tree_models import MyExtraTreesRegressor, MyExtraTreesClassifier, MyRandomForestRegressor, MyRandomForestClassifier
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.ensemble import ExtraTreesRegressor
+from models.tree_models import MyExtraTreesRegressor, DoubleExtraTreesRegressor
 from models.monthly_average import MonthlyAverageClassifier
 from data_helper import DataHelper
 from days_statistics import DaysStatistics
 from datetime import timedelta, date, datetime
 import pandas as pd
 import os
+import json
+import requests
+from bs4 import BeautifulSoup
+import urllib.request
+import sys
+import unicodedata
+from utils import Day
 
-class Predictor:
-    """
-    Class for automated predictions runs be cron on webserver
-    """
+WEATHER_API_KEY = None
+
+# URL is missing API KYE. Full address with API KEY is constructed in get_weather() method
+WEATHER_URL = 'http://api.openweathermap.org/data/2.5/forecast?id=3067696&units=metric&appid='
+
+
+class Predictor():
+    
     def __init__(self):
         """
         Constructor
         """
         self.dh = DataHelper()
         self.ds = DaysStatistics()
-        self.prediction_steps = 210
+        self.prediction_steps = 288
+
+    def get_weather(self):
+        """
+        Downloads actual weather forcast. It is necessary to fill valid API Key to WEATHER_URL for correnct functionality.
+        """
+        r = requests.get(url = WEATHER_URL+WEATHER_API_KEY) 
+        json_data = json.loads(r)
+        weather = []
+        for weather_prediction in json_data['list']:
+            time = datetime.fromtimestamp(weather_prediction['dt'])
+            temperature = weather_prediction['main']['temp']
+            wind = weather_prediction['wind']['speed']
+
+            rain, snow = 0.0, 0.0
+            if 'rain' in weather_prediction['main']:
+                 rain = weather_prediction['main']['rain']['3h']
+            if 'snow' in weather_prediction['main']:
+                 rain = weather_prediction['main']['snow']['3h']
+
+            precipitation = rain + snow
+            pressure =  weather_prediction['main']['pressure']
+            weather.append([time, temperature,wind,precipitation,pressure])
+        return weather
         
-    def add_estimator(self, estimator):
+    def get_date_string(self, date):
         """
-        Adds new estimator to for predictions
+        Generates part of URL address for Sutka pool web page with table of reserved lines for given date.
+        :param date: Datetime.date
+        :return: The rest of URL that starts with: http://www.sutka.eu/obsazenost-bazenu
         """
-        self.estimators.append(estimator)
-    
-    def generate_predictions(self, estimator, start_date, end_date, export_folder, columns=['pool','day_of_week','month','hour','minute'], time_steps_back=3):
-        """
-        Generates prediction vector and saves it to CSV file recognized by web server
-        """
-        for single_day in self.daterange(start_date, end_date):
-            data_dict = {
-                'month' : int(single_day.strftime('%m')),
-                'day' : int(single_day.strftime('%d')),
-                'hour' : 5,
-                'minute' : 0,
-                'day_of_week' : single_day.weekday(),
-            }
-            x, y = self.prepare_feature_vectors(columns, data_dict, time_steps_back)
-            y_pred = self.dh.predict_day_from_features(x, estimator, time_steps_back)
-            self.export_prediction(y_pred, export_folder, single_day, time_steps_back)
-            
-    def export_prediction(self, y_pred, export_folder, single_day, time_steps_back=3):
-        """
-        Exports predictions to CSV file
-        """
-        df = pd.DataFrame(columns=['time','pool'])
-        time_step = datetime.strptime(single_day.strftime('%Y%m%d'), '%Y%m%d')
+        next_day = date + timedelta(days=1)
+        day_str = date.strftime('%d.%m.%Y')
+        next_day_str = next_day.strftime('%d.%m.%Y')
+        addr_str = '?from='+day_str+'&to='+next_day_str+'&send=Zobrazit&do=form-submit'
+        return addr_str
 
-        hour = 0
-        minute = 0
-        for i in range(288):
-            time_step = time_step.replace(hour=hour, minute=minute)
-            df.loc[i] = [time_step.strftime('%Y-%m-%d %H:%M:%S'), 0]
-            minute += 5
-            if minute == 60:
-                minute = 0
-                hour += 1
-
-        hour = 5
-        minute = 5*time_steps_back
-        y_id = 0
-        start_id = df[df['time'] == time_step.strftime('%Y-%m-%d')+' 05:00:00'].index.item() + time_steps_back + 1
-        for i in range(start_id, len(y_pred)+start_id):
-            time_step = time_step.replace(hour=hour, minute=minute)
-            df.loc[i] = [time_step.strftime('%Y-%m-%d %H:%M:%S'), y_pred[y_id]]
-            minute += 5
-            y_id += 1
-            if minute == 60:
-                minute = 0
-                hour += 1
-
-        csv_file = os.path.join(export_folder, time_step.strftime('%Y-%m-%d')+'.csv')
-        export_csv = df.to_csv (csv_file, index = None, header=True)
-
-    def prepare_feature_vectors(self, columns, data_dict, time_steps_back):
+    def parse_line_usage_table(self, table_rows):
         """
-        Generates feature vector for prediction algorithms
+        Parse table with reserved lines from web page http://www.sutka.eu/obsazenost-bazenu
+        :param table_rows: HTML table from web that is prepared in method get_lines_usage_for_day
+        :return: list with 64 items. Each item is 15 minute time slot starting from 6:00
+        """
+        time_slots = ['']*64
+        i = 0
+        for i in range(1,9): 
+            row = table_rows[i]
+            slot = 0
+            row_str = '|'
+            th = row.find_all('th')
+
+            cols = row.find_all('td')
+            for col in cols:
+                if len(col) == 3:
+                    title = unicodedata.normalize('NFKD', col.attrs['title']).encode('ascii','ignore')
+                    if 'colspan' in col.attrs:
+                        row_str += ' * | * |'
+                        time_slots[slot] += title.decode('utf-8')+','
+                        time_slots[slot+1] += title.decode('utf-8')+','
+                        slot += 2
+                    else:
+                        row_str += ' * |'
+                        time_slots[slot] += title.decode('utf-8')+','
+                        slot += 1
+                else:
+                    row_str += '   |'
+                    slot += 1
+        time_slots[63] = time_slots[61]
+        time_slots[62] = time_slots[61]
+        time_slots[61] = time_slots[60]
+        return time_slots
+
+    def get_lines_usage_for_day(self, day):
+        """
+        Generates list with lines reservations for the day
+        :param day: Datetime.date of interest
+        :return: list with 64 items. Each item is 15 minute time slot starting from 6:00
+        """
+        date_str = self.get_date_string(day)
+        r = urllib.request.urlopen('http://www.sutka.eu/obsazenost-bazenu'+date_str).read()
+        soup = BeautifulSoup(r, 'html.parser')
+        table = soup.find('table', attrs={'class':'pooltable'})
+        table_rows = table.find_all('tr')
+        return self.parse_line_usage_table(table_rows)
+
+    def predict(self, predictor, columns, data_dict, time_steps_back, lines_reservations=None):
+        """
+        Prepares feature vector for prediction algorithms an generates prediction
+        :param predictor: sklearn predictor or other with simmilar interface
         :param columns: List with names of columns that must be in feature vector
         :param data_dict: Dictionary with time data containing columns names and default vaules
         :param time_steps_back: Number of time steps for one input to prediction algorithm
-        :return: Arrays x and y with prepared features in x
+        :param lines_reservations: List with line reservations for predicted day generated by get_lines_usage_for_day method
+        :return: Vector with prediction for the day (288 items)
         """
+        lines_reserved_id = -1
+        org_ids = dict()
+        for org_id, column in enumerate(columns):
+            if column.startswith('reserved_'):
+                org_ids[column] = org_id
+            if column == 'lines_reserved':
+                lines_reserved_id = org_id
+
+        if lines_reservations is None:
+            lines_reservations = ['']*64
+            
         data = list()
         for i in range(self.prediction_steps):
             data.append([0]*len(columns))
             for j, column in enumerate(columns):
                 if column in data_dict:
                     data[i][j] = data_dict[column]
+
+            slot_id = (data_dict['minute_of_day']-360)//15
+            if slot_id >= 0 and slot_id < 64:
+                org_list = lines_reservations[slot_id].split(',')[:-1]
+                for name in org_list:
+                    feature_name = 'reserved_' + name
+                    if feature_name in columns:
+                        data[i][org_ids[feature_name]] += 1
+                    elif 'reserved_other' in columns:
+                        data[i][org_ids['reserved_other']] += 1
+                        
+                    if lines_reserved_id >= 0:
+                        data[i][lines_reserved_id] += 1
+                        
             data_dict['minute'] += 5
+            data_dict['minute_of_day'] += 5
             if data_dict['minute'] == 60:
                 data_dict['minute'] = 0
                 data_dict['hour'] += 1
 
         df = pd.DataFrame(data, columns=columns) 
-        return self.dh.build_timeseries(df, time_steps_back)
+        day = Day('ts')
+        day.data = df
+        x, y = self.dh.get_feature_vectors_from_days([day], [], time_steps_back, 1, True)
+        return self.dh.predict_day_from_features(x, predictor, time_steps_back)
     
     def daterange(self, start_date, end_date):
         """
@@ -105,41 +173,63 @@ class Predictor:
         """
         for n in range(int ((end_date - start_date).days)):
             yield start_date + timedelta(n)
+            
+    def export_prediction(self, y_pred, prediction_date, export_folder):
+        """
+        Exports predictions to CSV file
+        :param y_pred: Vecotr of 288 items with prediction
+        :param prediction_date: Datetime with prediction date
+        :param export_folder: Directory where to store csv with prediction. Will be created if does not exist
+        """
+        if not os.path.isdir(export_folder):
+            os.mkdir(export_folder)
 
-    def export_prediction_lines(self, export_folder, single_day):
-        df = pd.DataFrame(columns=['time','pool','lines_reserved'])
-        time_step = datetime.strptime(single_day.strftime('%Y%m%d'), '%Y%m%d')
+        day_of_week = prediction_date.weekday()
+        month = int(prediction_date.strftime('%m'))
+        day = int(prediction_date.strftime('%d'))
+        s = 'time,pool,lines_reserved\n'
+        pred_id = 0
+        slot_id = 0
+        for hour in range(24):
+            for minute in range(0,60,5):
+                prediction = 0
+                if hour < 23:
+                    prediction = int(y_pred[slot_id])
+                s += '2020-%02d-%02d %02d:%02d:00,%d,0\n'%(month,day,hour,minute,prediction)
+                slot_id += 1
+        fn = '2020-%02d-%02d.csv'%(month,day)
+        text_file = open(os.path.join(export_folder, fn), "w")
+        text_file.write(s)
+        text_file.close()
 
-        hour = 0
-        minute = 0
-        for i in range(288):
-            time_step = time_step.replace(hour=hour, minute=minute)
-            df.loc[i] = [time_step.strftime('%Y-%m-%d %H:%M:%S'), 'null', 0]
-            minute += 5
-            if minute == 60:
-                minute = 0
-                hour += 1
+    def generate_predictions(self, estimator, prediction_date, export_folder):
+        """
+        Generates prediction vector and saves it to CSV file recognized by web server
+        :param estimator: Estimator class with prediction model, time_steps_back and columns members
+        :param prediction_date: Datetime with prediction date
+        :param export_folder: Directory where to store csv with prediction. Will be created if does not exist
+        """
+        data_dict = {
+            'month' : int(prediction_date.strftime('%m')),
+            'day' : int(prediction_date.strftime('%d')),
+            'hour' : 0,
+            'minute' : 0,
+            'minute_of_day' : 0,
+            'year' : int(prediction_date.strftime('%Y')),
+            'day_of_week' : prediction_date.weekday(),
+            'temperature_binned':3,
+            'wind_binned':1,
+            'humidity_binned':3,
+            'precipitation_binned':0,
+            'pressure_binned':2
+        }
+        
+        for column in estimator.columns:
+            if column.startswith('reserved'):
+                data_dict[column] = 0
 
-        csv_file = os.path.join(export_folder, time_step.strftime('%Y-%m-%d')+'.csv')
-        export_csv = df.to_csv (csv_file, index = None, header=True)
-
-p = Predictor()
-columns_pred = ['pool','day_of_week','month','hour','minute']
-
-# mac = MonthlyAverageClassifier()
-# mac.fit(p.dh.get_training_days(),columns_pred)
-
-# clf = ExtraTreesClassifier(random_state=17, n_estimators=20, max_depth=50, min_samples_split=5, min_samples_leaf=1)
-# x_train, y_train, x_test, y_test = p.dh.generate_feature_vectors(columns_pred)
-# clf.fit(x_train, y_train)
-
-start_date = date(2019, 12, 1)
-end_date = date(2020, 2, 1)
-
-etr = MyExtraTreesRegressor()
-etr.columns = ['pool','day_of_week','month','hour','minute']
-etr.model = ExtraTreesRegressor(random_state=17, n_estimators=65, max_depth=35, min_samples_split=2, min_samples_leaf=1, max_leaf_nodes=None)
-etr.time_steps_back = 3
-etr.fit_on_training_set()
-
-p.generate_predictions(etr.model, start_date, end_date, 'export')
+        if prediction_date.weekday() < 5:
+            y_pred = self.predict(estimator.weekday_model, estimator.columns, data_dict, estimator.time_steps_back, self.get_lines_usage_for_day(prediction_date))
+        else:
+            y_pred = self.predict(estimator.weekend_model, estimator.columns, data_dict, estimator.time_steps_back, self.get_lines_usage_for_day(prediction_date))
+        self.export_prediction(y_pred, prediction_date, export_folder)
