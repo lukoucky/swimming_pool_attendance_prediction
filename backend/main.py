@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import json
 import argparse
 import pandas as pd
@@ -56,13 +57,15 @@ def get_all_for(year,month,day):
 	return jsonify({'attendance':attendance, 'lines_reserved':lines, 'prediction':{'monthly_average':prediction_avg, 'extra_trees':prediction_extra}})
 
 def get_data(filepath, column):
-	df = pd.read_csv(filepath)
-	values = ''
-	for i, row in df.iterrows():
-		if pd.isna(row[column]):
-			values += 'nan,'
-		else:
-			values += str(int(row[column]))+','
+	values = 'nan,'*288
+	if os.path.isfile(filepath):
+		df = pd.read_csv(filepath)
+		values = ''
+		for i, row in df.iterrows():
+			if pd.isna(row[column]):
+				values += 'nan,'
+			else:
+				values += str(int(row[column]))+','
 	return values[:-1]
 
 if __name__ == '__main__':
