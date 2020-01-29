@@ -171,6 +171,17 @@ $(window).on('load', function() {
     update_chart(today, true);
 });
 
+document.onkeydown = function(event) {
+    switch (event.keyCode) {
+        case 37:
+            left_arrow_date_on_click();
+            break;
+        case 39:
+            right_arrow_date_on_click();
+            break;
+    }
+};
+
 function change_data(data, name)
 {
     for(var i = 0; i < window.myLine.config.data.datasets.length; i++)
