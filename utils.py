@@ -192,12 +192,16 @@ class Day(object):
 		attandance = self.data['pool'][start:stop]
 		return sum(attandance == 0)
 
-	def get_normalized_data(self):
+	def get_normalized_data(self, keep_time=False):
 		"""
 		Normalizes all numeric columns in self.data.
+		:param keep_time: If True keeps time column in dataset
 		:return: Normalized self.data
 		"""
 		df = self.data.copy()
+
+		if not keep_time:
+			df.drop(columns=['time'], inplace=True)
 
 		df['pool'].clip(lower=0, upper=400, inplace=True)
 
@@ -210,8 +214,8 @@ class Day(object):
 		df['day_of_week'] = df['day_of_week']/6
 		df['month'] = df['month']/12
 		df['day'] = df['day']/31
-		df['hour'] = df['hour']/24
-		df['minute'] = df['minute']/60
+		# df['hour'] = df['hour']/24
+		# df['minute'] = df['minute']/60
 		df['minute_of_day'] = df['minute_of_day']/1440
 		df['year'] = (df['year']-2015)/10
 		
