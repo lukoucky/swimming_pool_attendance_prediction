@@ -27,3 +27,4 @@ Response is json with `attendance` or `prediction` field that contains string wi
 * Server was developed with help of [this tutorial](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world)
 * Setup of service on linux server was done [like this](https://blog.miguelgrinberg.com/post/running-a-flask-application-as-a-service-with-systemd)
 * SSL certificates on server were generated with help of [this tutorial](https://pythonprogramming.net/ssl-https-letsencrypt-flask-tutorial/)
+* Certificates renewal done by cron once a day [like here](https://serverfault.com/a/825032)
