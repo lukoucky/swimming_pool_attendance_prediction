@@ -235,7 +235,8 @@ function generate_prediction(data_path, algorithm, generate_new){
     $.ajax({
         type: "GET",  
         url: data_path,
-        dataType: "jsonp",       
+        contentType: "application/json",
+        dataType: 'json',      
         success: function(response)  
         {
             str_prediction = response.prediction.split(',');
@@ -318,7 +319,8 @@ function update_chart(date_string, generate_new = false){
     $.ajax({
         type: "GET",  
         url: csv_url,
-        dataType: "jsonp",       
+        contentType: "application/json",
+        dataType: 'json',      
         success: function(response)  
         {
             prediction_avg = response.prediction.monthly_average.split(',');
