@@ -2,7 +2,8 @@
 
 This repository contain all code for my personal project that is predicting attendance of [Šutka](https://www.sutka.eu/en/) swimming pool.
 
-Live web with predictions is running on [www.lukoucky.com](https://www.lukoucky.com)
+Live web with predictions is running on [www.lukoucky.com](https://lukoucky.com/)
+
 ![Webpage image](report/imgs/webpage_new.png)
 
 Project is still work in progress. So far following is done:
