@@ -1,10 +1,17 @@
-# Šutka Swimming Pool Attendance Prediction
+# Swimming Pool Attendance Prediction
 
-This repository contain all code for my personal project that is predicting attendance of [Šutka](https://www.sutka.eu/en/) swimming pool.
+This repository contain all code for my personal project - predicting the attendance of [Šutka](https://www.sutka.eu/en/) swimming pool.
 
-Live web with predictions is running on [www.lukoucky.com](https://lukoucky.com/)
+Live web with predictions is running on [https://lukoucky.com](https://lukoucky.com/)
 
-![Webpage image](report/imgs/webpage_new.png)
+![Webpage image](predictor/report/imgs/webpage_new.png)
+
+Project is completed from four main parts:
+
+* [scraper](scraper) - scrapes current attendence, lines reservation, weather, holidays and other usefull data and saves them to database
+* [predictor](predictor) - generates predictions of attendace
+* [backend](backend) - flask backend providing REST API to data from scraper and predictions
+* [frontend](frontend) - webpage with visualizations of attendence and predictions
 
 Project is still work in progress. So far following is done:
 * Gathering of attendance data, swimming lines usage data and weather data and storing them in database
@@ -13,8 +20,9 @@ Project is still work in progress. So far following is done:
 * Several algorithms trained for prediction. Best performance so far have [Extra Trees Regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html)
 
 Still on TODO list:
+
 * [ ] Finalize scipts for data exporting
-* [ ] Automated generation of prediction 
+* [ ] Automated generation of all prediction 
 * [X] ~~Host website with predictions on github.io and get predictions through REST API (needs server with HTTPS)~~
 * [ ] Move from MySQL to SQLite
 * [ ] Tune algorithms that are working now for better performance
