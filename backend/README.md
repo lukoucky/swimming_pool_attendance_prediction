@@ -1,7 +1,19 @@
 # Backend server
-Simple [flask](https://palletsprojects.com/p/flask/) server that provides REST API to attendance data and predictions. Run with `main.py --ssl_cert "path_to_ssl_certificate_file" --ssl_key "path_to_ssl_key_file"`
+
+Simple [flask](https://palletsprojects.com/p/flask/) server that provides REST API to attendance data and predictions. 
 
 Server with real data and predictions runs on [https://lukoucky.com:5000](https://lukoucky.com:5000). So far it can only return real attendance with line reservations data or predictions from Monthly Average predictor and Extra Trees Regressor.
+
+
+### Setup
+If you want to run and test the API the best way to do it is to setup and run Docker container. The app expects that port 5000 is opened.
+
+* Build the Docker `service docker image build . -t pool-prediction-backend:0.1`
+* Run the service: `docker container run -i -p 5000:5000 pool-prediction-backend:0.1`
+
+Or you can install dependencies from `requirements.txt` and run locally in the virtual environment of your choosing simple with `python main.py` or with SSL certificate for HTTPS with `python main.py --ssl_cert "path_to_ssl_certificate_file" --ssl_key "path_to_ssl_key_file"` 
+
+### API endpoints description
 
 Valid requests for predictions and real attendance on January 12, 2020 are:
 * Attendance with line usage for single day:
