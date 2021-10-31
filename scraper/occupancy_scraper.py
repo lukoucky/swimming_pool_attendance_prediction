@@ -29,7 +29,7 @@ class OccupancyScraper:
         """
         Scrapes line usage for today (the first table on the page)
         :return: List with 64 items - one for each 15 segment when pool is open. 
-                 Each item have number that represents number of reserved lines in given 15 minute slot.
+                 Each item contains number that represents number of reserved lines in given 15 minute slot.
         """
         r = urllib.request.urlopen(self.line_usage_url).read()
         soup = BeautifulSoup(r, 'html.parser')
