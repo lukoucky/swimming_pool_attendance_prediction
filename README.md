@@ -24,11 +24,12 @@ Still on TODO list:
 * [ ] Finalize scipts for data exporting
 * [ ] Automated generation of all prediction 
 * [X] ~~Host website with predictions on github.io and get predictions through REST API (needs server with HTTPS)~~
-* [ ] Move from MySQL to SQLite
+* [ ] Move from MySQL to SQLite or Postgres
 * [ ] Tune algorithms that are working now for better performance
 * [ ] Refactor very slow `preprocessing_data.py`
 * [ ] Implement Hidden Markov Model 
 * [ ] Tune LSTM's 
 * [ ] Make nicer web page and make it mobile friendly
 * [ ] Move project to container
-* [ ] Writte short blog about this project
+* [ ] Write short blog about this project
+* [ ] Create dashboard with analysis of data and predictions 
