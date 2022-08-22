@@ -1,8 +1,11 @@
 from airflow import DAG
 from occupancy_scraper import OccupancyScraper
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from dateutil import tz
 from airflow.decorators import task
 import logging
+import psycopg2
+import os
 
 
 default_args = {
@@ -29,7 +32,7 @@ with DAG(
     tags=['scraper']
 ) as dag:
 
-    @task(execution_timeout=timedelta(minutes=1))
+    @task(execution_timeout=timedelta(minutes=1), provide_context=True)
     def run_scraper():
         os = OccupancyScraper()
         res = os.get_current_occupancy()
@@ -37,26 +40,36 @@ with DAG(
         return res
 
     @task(execution_timeout=timedelta(minutes=1))
-    def save_data(data):
+    def save_data(data, execution_date=None):
         occupancy = int(data["percentage"])
         pool  = int(data["pool"])
         park =  int(data["park"])
 
-        print(f'{pool} {park} {occupancy}')
-        # db = MySQLdb.connect("127.0.0.1",user,passwd,db_name)
-        # cursor = db.cursor()
+        exec_time = datetime.fromisoformat(str(execution_date))
+        to_zone = tz.gettz('Europe/Prague')
+        from_zone = tz.tzutc()
 
-        # table_name = 'occupancy'
+        exec_time = exec_time.replace(tzinfo=from_zone)
+        my_timestamp = exec_time.astimezone(to_zone)
 
-        # dt = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        # dow = datetime.datetime.today().weekday()
+        db_port = os.getenv('POSTGRES_PORT')
+        db_user = os.getenv('POSTGRES_USER')
+        db_pass = os.getenv('POSTGRES_PASSWORD')
+        db_name = os.getenv('POSTGRES_DB')
 
-        # print("Current occupancy: %d%%, In pool: %d, In aquapark: %d (Time: %s)"%(occupancy, pool, park, dt))
+        query = f'INSERT INTO occupancy (percent, pool, park, time, day_of_week) VALUES ({occupancy}, {pool}, {park}, \'{my_timestamp.strftime("%Y-%m-%d %H:%M:%S")}\', {datetime.today().weekday()});'
+        logging.info(query)
+        conn = psycopg2.connect(
+            database=db_name, 
+            user=db_user, 
+            password=db_pass, 
+            host='postgres', 
+            port=db_port)
+        cur = conn.cursor()
+        cur.execute(query)
+        conn.commit()
 
-        # t = "INSERT INTO %s (percent, pool, park, lines_reserved, time, day_of_week) VALUES (%s,%s,%s,%d,\'%s\',%d);"%(table_name, occupancy, pool, park, lines, dt, dow)
-        # cursor.execute(t)
-
-        # db.commit()
-        # db.close()
+        cur.close()
+        conn.close()
 
     save_data(run_scraper())
