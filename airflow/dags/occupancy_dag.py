@@ -1,7 +1,7 @@
 from airflow import DAG
 from scraper.occupancy_scraper import OccupancyScraper
+from utils import convert_time_to_cet
 from datetime import datetime, timedelta
-from dateutil import tz
 from airflow.decorators import task
 import logging
 import psycopg2
@@ -45,12 +45,7 @@ with DAG(
         pool  = int(data["pool"])
         park =  int(data["park"])
 
-        exec_time = datetime.fromisoformat(str(execution_date))
-        to_zone = tz.gettz('Europe/Prague')
-        from_zone = tz.tzutc()
-
-        exec_time = exec_time.replace(tzinfo=from_zone)
-        my_timestamp = exec_time.astimezone(to_zone)
+        my_timestamp = convert_time_to_cet(execution_date)
 
         db_port = os.getenv('POSTGRES_PORT')
         db_user = os.getenv('POSTGRES_USER')

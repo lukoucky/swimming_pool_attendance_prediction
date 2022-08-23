@@ -31,7 +31,7 @@ dump_file = 'database_dump.sql'
 with DAG(
     dag_id='database_backup',
     default_args=default_args, 
-    schedule_interval='0 1 * * *',
+    schedule_interval='0 3 * * *',
     catchup=False,
     tags=['scraper']
 ) as dag:

@@ -25,7 +25,7 @@ default_args = {
 with DAG(
     dag_id='lines_scraper',
     default_args=default_args, 
-    schedule_interval='*/30 05-21 * * *',
+    schedule_interval='0 1 * * *',
     catchup=False,
     tags=['scraper']
 ) as dag:
