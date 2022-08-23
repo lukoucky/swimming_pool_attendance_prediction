@@ -24,6 +24,7 @@ services:
         environment:
             - LOAD_EX=n
             - EXECUTOR=Local
+            - PYTHONPATH=${PYTHONPATH}:/usr/local/airflow
         env_file:
             - db.env
         logging:
@@ -32,7 +33,7 @@ services:
                 max-file: "3"
         volumes:
             - ./airflow/dags:/usr/local/airflow/dags
-            # - ./plugins:/usr/local/airflow/plugins
+            - ./scraper:/usr/local/airflow/scraper
         ports:
             - "8080:8080"
         command: webserver
