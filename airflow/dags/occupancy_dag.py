@@ -1,6 +1,6 @@
 from airflow import DAG
-from occupancy_scraper import OccupancyScraper
-from datetime import datetime, timedelta, timezone
+from scraper.occupancy_scraper import OccupancyScraper
+from datetime import datetime, timedelta
 from dateutil import tz
 from airflow.decorators import task
 import logging
@@ -27,7 +27,7 @@ default_args = {
 with DAG(
     dag_id='occupancy_scraper',
     default_args=default_args, 
-    schedule_interval='*/1 * * * *',
+    schedule_interval='*/5 * * * *',
     catchup=False,
     tags=['scraper']
 ) as dag:
