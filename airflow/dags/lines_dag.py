@@ -1,5 +1,7 @@
+from cgitb import reset
 from airflow import DAG
 from scraper.line_scraper import LineScraper
+from utils.database import LinesUsageDBHelper
 from datetime import datetime, timedelta
 from dateutil import tz
 from airflow.decorators import task
@@ -18,10 +20,6 @@ default_args = {
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
     'execution_timeout': timedelta(seconds=300),
-    # 'queue': 'bash_queue',
-    # 'pool': 'backfill',
-    # 'priority_weight': 10,
-    # 'end_date': datetime(2016, 1, 1),
 }
 
 with DAG(
@@ -63,16 +61,8 @@ with DAG(
             password=db_pass, 
             host='postgres', 
             port=db_port)
-        cur = conn.cursor()
-
-        for slot_id, reservations in enumerate(data):
-            if len(reservations) > 0:
-                query = f'INSERT INTO lines_usage (date, time_slot, reservation) VALUES (\'{date}\', {slot_id}, \'{",".join(reservations)}\');'
-                logging.info(query)
-                cur.execute(query)
-
-        conn.commit()
-        cur.close()
+        helper = LinesUsageDBHelper(date, data)
+        helper.save_lines_usage(conn)
         conn.close()
 
     save_data(run_scraper())
