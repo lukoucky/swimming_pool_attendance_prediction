@@ -55,8 +55,7 @@ class LineScraper:
                  group have more lines reserved. One name instance means one reserved line.
         """
         time_slots = [ [] for _ in range(64) ]
-        print(time_slots)
-        # time_slots = ['']*64
+
         i = 0
         for i in range(1,9): 
             row = table_rows[i]

@@ -85,9 +85,10 @@ class OccupancyScraper:
                 slot_id += 1
             return slots[slot_id]
     
-    def get_current_occupancy(self):
+    def get_current_occupancy(self, include_lines=False):
         """
         Scrapes current occupancy of Sutka swimming pool.
+        :param include_lines: Include current line usage, defaults to False
         :return: Dictionary with following keys:
                     pool: Number of people currently in the pool
                     park: Number of people currently in the park
@@ -97,11 +98,13 @@ class OccupancyScraper:
         data = self._scrape_current_occupancy_data()
         if data is None:
             return None
-        lines = self._get_current_line_usage()
+        
+        lines = int(self._get_current_line_usage()) if include_lines else None
+
         occupancy = {
             'pool': int(data[2].get_text()),
             'park': int(data[3].get_text()),
-            'lines': int(lines),
+            'lines': lines,
             'percentage': int(data[1].get_text()[:-1])
         }
 
