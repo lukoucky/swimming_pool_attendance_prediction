@@ -66,9 +66,10 @@ RUN set -ex \
     && pip install apache-airflow[crypto,celery,postgres,hive,jdbc,mysql,ssh${AIRFLOW_DEPS:+,}${AIRFLOW_DEPS}]==${AIRFLOW_VERSION} \
     && pip install redis \
     && pip install beautifulsoup4==4.10.0 \
+    && pip install dropbox \
     && if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi \
     && apt-get install -y libpq-dev python3-dev \
-    # && apt-apt install postgresql postgresql-contrib \
+    && apt-get install -y postgresql postgresql-client \
     && apt-get purge --auto-remove -yqq $buildDeps \
     && apt-get autoremove -yqq --purge \
     && apt-get clean \
