@@ -32,7 +32,7 @@ with DAG(
     tags=['scraper']
 ) as dag:
 
-    @task(execution_timeout=timedelta(minutes=1), provide_context=True)
+    @task(execution_timeout=timedelta(minutes=1))
     def run_scraper():
         os = OccupancyScraper()
         res = os.get_current_occupancy()
@@ -40,12 +40,12 @@ with DAG(
         return res
 
     @task(execution_timeout=timedelta(minutes=1))
-    def save_data(data, execution_date=None):
+    def save_data(data):
         occupancy = int(data["percentage"])
         pool  = int(data["pool"])
         park =  int(data["park"])
 
-        my_timestamp = convert_time_to_cet(execution_date)
+        my_timestamp = convert_time_to_cet(datetime.now())
 
         db_port = os.getenv('POSTGRES_PORT')
         db_user = os.getenv('POSTGRES_USER')

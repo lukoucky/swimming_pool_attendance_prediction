@@ -1,4 +1,6 @@
+import os
 import logging
+import psycopg2
 
 
 class LinesUsageDBHelper:
@@ -40,3 +42,8 @@ class LinesUsageDBHelper:
                     self.update_entry(row_id, reservation_string, cursor)
         db_connection.commit()
         cursor.close()
+
+
+class PredictorDatabaseHelper:
+    def __init__(self) -> None:
+        pass

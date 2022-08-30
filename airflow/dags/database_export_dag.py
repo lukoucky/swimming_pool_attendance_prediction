@@ -33,7 +33,7 @@ with DAG(
     default_args=default_args, 
     schedule_interval='0 4 * * *',
     catchup=False,
-    tags=['scraper']
+    tags=['database']
 ) as dag:
 
     @task(execution_timeout=timedelta(minutes=10))
