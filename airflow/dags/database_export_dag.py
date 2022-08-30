@@ -31,7 +31,7 @@ dump_file = 'database_dump.sql'
 with DAG(
     dag_id='database_backup',
     default_args=default_args, 
-    schedule_interval='0 3 * * *',
+    schedule_interval='0 4 * * *',
     catchup=False,
     tags=['scraper']
 ) as dag:
@@ -66,11 +66,17 @@ with DAG(
         exec_time = exec_time.replace(tzinfo=from_zone)
         my_timestamp = exec_time.astimezone(to_zone)
 
-        dropbox_access_token = os.getenv('DROPBOX_ACCESS_TOKEN')
+        # dropbox_access_token = os.getenv('DROPBOX_ACCESS_TOKEN')
+        dropbox_refresh_token = os.getenv('DROPBOX_REFRESH_TOKEN')
         dropbox_path = f'/db_backup_{my_timestamp.strftime("%Y-%m-%dT%H:%M:%S")}.sql'
-
+        dropbox_app_key = os.getenv('DROPBOX_APP_KEY')
+        dropbox_app_secret = os.getenv('DROPBOX_APP_SECRET')
         logging.info(f'Uploading {dump_file} to Dropbox as {dropbox_path}')
-        client = dropbox.Dropbox(dropbox_access_token)
+        client = dropbox.Dropbox(
+                            app_key = dropbox_app_key,
+                            app_secret = dropbox_app_secret,
+                            oauth2_refresh_token = dropbox_refresh_token
+                        )
         client.files_upload(open(dump_file, "rb").read(), dropbox_path)
     
     @task(execution_timeout=timedelta(minutes=1))

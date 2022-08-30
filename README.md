@@ -40,3 +40,28 @@ Project is still work in progress. So far following is done:
 * 2019 - After several attempts to start the actual work on prediction tool I sign up to [Udacity](https://www.udacity.com/) Machine Learning Nanodegree (two 3 months courses from ML basics to production). The last big Capstone Project was to propose and solve problem using ML (gather data, analyze data, propose solution, implement and train ML solution, analyze results) and this was finally the push I need to get into this project.
 * January 2020 - Many long nights later I had some working solution. With updated visualizations on web page, several working models and half working pipelines. I had enough to finish the Nanodegree but the work was far from done. The only ML classifier working better than simple Monthly Average was Extra Trees Regressor and Random Forest Regressor. There were some big errors in neural network models and unfinished work on Hidden Markov Model. 
 * November 2021 - Last two years bring a lot of variance in to the data of course )show me the dataset not effected by COVID). After one month of completely missing data thanks to some error on the server I finally had some impulse to work on the project again. 
+
+## Miscellaneous
+
+### Dropbox refresh token
+
+Dropbox allows API access to your folders through python SDK. You can visit [developer console](https://www.dropbox.com/developers/apps), create app, assign read and write privilages to specific folder and generate access token for OAuth2 access. The problem is that this token have only 4 hour expiration time. You need to generate refresh token to be able to access dropbox folders for longer time period. Here is how to obtain it form [this tutorial](https://www.codemzy.com/blog/dropbox-long-lived-access-refresh-token):
+
+1) Create new access code
+
+        https://www.dropbox.com/oauth2/authorize?client_id=<APP_KEY>&token_access_type=offline&response_type=code
+
+2) Send post request with access code to get refresh token
+
+        curl --location --request POST 'https://api.dropboxapi.com/oauth2/token' \
+        -u '<APP_KEY>:<APP_SECRET>'
+        -H 'Content-Type: application/x-www-form-urlencoded' \
+        --data-urlencode 'code=<ACCESS_CODE>' \
+        --data-urlencode 'grant_type=authorization_code'
+
+3) Use refresh token together with app key and app secret to create insance of python dropbox client
+
+        client = dropbox.Dropbox(app_key = dropbox_app_key,
+                                 app_secret = dropbox_app_secret,
+                                 oauth2_refresh_token = dropbox_refresh_token)
+        client.files_upload(open(dump_file, "rb").read(), dropbox_path)

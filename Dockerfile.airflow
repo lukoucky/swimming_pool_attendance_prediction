@@ -67,6 +67,7 @@ RUN set -ex \
     && pip install redis \
     && pip install beautifulsoup4==4.10.0 \
     && pip install dropbox \
+    && pip install typing-extensions \
     && if [ -n "${PYTHON_DEPS}" ]; then pip install ${PYTHON_DEPS}; fi \
     && apt-get install -y libpq-dev python3-dev \
     && apt-get install -y postgresql postgresql-client \
@@ -83,8 +84,10 @@ RUN set -ex \
 
 RUN pip install psycopg2-binary
 COPY airflow/script/entrypoint.sh /entrypoint.sh
+COPY airflow/script/db_init.py /db_init.py
 COPY airflow/config/airflow.cfg ${AIRFLOW_USER_HOME}/airflow.cfg
 COPY airflow/config/webserver_config.py ${AIRFLOW_USER_HOME}/webserver_config.py
+COPY airflow/data /
 
 RUN chown -R airflow: ${AIRFLOW_USER_HOME}
 
