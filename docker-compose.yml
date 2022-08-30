@@ -13,7 +13,7 @@ services:
                 max-size: 10m
                 max-file: "3"
 
-    webserver:
+    airflow_webserver:
         # image: wuuker/docker-airflow:2.2.5
         build:
             context: .
@@ -35,6 +35,7 @@ services:
             - ./airflow/dags:/usr/local/airflow/dags
             - ./scraper:/usr/local/airflow/scraper
             - ./utils:/usr/local/airflow/utils
+            - ./predictor:/usr/local/airflow/predictor
         ports:
             - "8080:8080"
         command: webserver
