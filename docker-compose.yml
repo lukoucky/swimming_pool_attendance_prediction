@@ -14,7 +14,7 @@ services:
                 max-file: "3"
         volumes:
             - ./airflow/data:/db_data
-    # TODO: make db persistent https://stackoverflow.com/questions/41637505/how-to-persist-data-in-a-dockerized-postgres-database-using-volumes
+            - ./postgres-data:/var/lib/postgresql/data
 
     airflow_webserver:
         # image: wuuker/docker-airflow:2.2.5
