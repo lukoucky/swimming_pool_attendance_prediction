@@ -110,6 +110,7 @@ fi
 case "$1" in
   webserver)
     airflow db init
+    python $AIRFLOW_USER_HOME/db_init.py
     if [ "$AIRFLOW__CORE__EXECUTOR" = "LocalExecutor" ] || [ "$AIRFLOW__CORE__EXECUTOR" = "SequentialExecutor" ]; then
       # With the "Local" and "Sequential" executors it should all run in one container.
       airflow scheduler &
