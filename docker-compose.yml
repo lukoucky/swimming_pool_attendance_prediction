@@ -39,6 +39,7 @@ services:
             - ./scraper:/usr/local/airflow/scraper
             - ./utils:/usr/local/airflow/utils
             - ./predictor:/usr/local/airflow/predictor
+            - ./web_data:/web_data
         ports:
             - "8080:8080"
         command: webserver
@@ -47,3 +48,17 @@ services:
             interval: 30s
             timeout: 30s
             retries: 3
+
+    webserver:
+        build:
+            context: .
+            dockerfile: Dockerfile.web
+        restart: always
+        depends_on:
+            - airflow_webserver
+        volumes:
+            - ./web_data:/web_data
+            - ./frontend:/frontend
+            - ./backend:/backend
+        ports:
+            - "9878:9878"

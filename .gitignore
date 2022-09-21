@@ -116,3 +116,9 @@ db.env
 
 # Postgres data form docker
 /postgres-data
+
+# Exported databases
+airflow/data
+
+# Some other data from predictors and scrapers
+web_data/

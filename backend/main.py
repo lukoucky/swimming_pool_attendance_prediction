@@ -2,17 +2,18 @@
 import os
 import argparse
 import csv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 
 
 app = Flask(__name__)
 cors = CORS(app)
 
+data_folder = '/web_data'
 
 @app.route('/attendance/<year>/<month>/<day>', methods=['GET'])
 def get_attendace(year,month,day):
-	filepath = '/var/www/html/data/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
+	filepath = f'{data_folder}/{year}-{int(month):02d}-{int(day):02d}.csv'
 	attendance = get_data(filepath,'pool')
 	lines = get_data(filepath,'lines_reserved')
 	return jsonify({'attendance':attendance, 'lines_reserved':lines})
@@ -48,7 +49,13 @@ def get_all_for(year,month,day):
 
 @app.route('/', methods=['GET'])
 def index():
-	return jsonify({'hello': 'world'})
+	return send_from_directory('/frontend', 'index.html')
+	# return jsonify({'hello': 'world'})
+
+
+@app.route('/<path>/<file>', methods=['GET'])
+def get_file(path, file):
+	return send_from_directory(f'/frontend/{path}', file)
 
 
 def get_data(filepath, column):
@@ -84,7 +91,7 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	if args.ssl_cert is None and args.ssl_key is None:
 		print('Running without SSL!')
-		app.run(debug=True, host='0.0.0.0') 	
+		app.run(debug=True, host='0.0.0.0', port='9878') 	
 	else:
 		if args.ssl_cert is None or args.ssl_key is None:
 			parser.print_help()
