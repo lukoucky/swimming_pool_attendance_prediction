@@ -6,9 +6,9 @@ class MonthlyAveragePredictor:
     def __init__(self, date: datetime) -> None:
         self.date = date
 
-    def get_data(self):
+    def get_data(self, days_back=33):
         db_helper = PredictorDatabaseHelper()
-        date_from = self.date - timedelta(days = 33)
+        date_from = self.date - timedelta(days = days_back)
         data = db_helper.get_daily_occupancy_vectors_from(date_from, self.date.weekday())
         return data
 
@@ -26,10 +26,11 @@ class MonthlyAveragePredictor:
 
         return final_data
     
-    def export_csv(self, data):
+    def export_csv(self, data, file_path=None):
         export_time = datetime.strptime(self.date.strftime('%Y-%m-%d')+' 00:00:00', '%Y-%m-%d %H:%M:%S')
         dt = self.date.strftime('%Y-%m-%d')
-        file_path = f'/web_data/prediction_monthly_average/{dt}.csv'
+        if file_path is None:
+            file_path = f'/web_data/prediction_monthly_average/{dt}.csv'
         csv_string = 'time,pool\n'
 
         for pool in data:

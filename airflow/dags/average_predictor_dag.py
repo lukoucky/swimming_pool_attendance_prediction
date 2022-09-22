@@ -37,12 +37,12 @@ with DAG(
     @task(execution_timeout=timedelta(minutes=1))
     def predict(data):
         final_data = predictor.generate_prediction(data)
-        logging.info(f'Goenerated prediction: {final_data}')
+        logging.info(f'Generated prediction: {final_data}')
         return final_data
 
     @task(execution_timeout=timedelta(minutes=1))
     def export_csv(data):
         predictor.export_csv(data)
-        logging.info('Exported data to CSV')
+        logging.info('Exported prediction to CSV')
 
     export_csv(predict(get_data()))

@@ -14,7 +14,6 @@ data_folder = '/web_data'
 @app.route('/attendance/<year>/<month>/<day>', methods=['GET'])
 def get_attendace(year,month,day):
 	filepath = f'{data_folder}/{year}-{int(month):02d}-{int(day):02d}.csv'
-	print(f'Getting data from filepath: {filepath}')
 	attendance = get_data(filepath, 'pool')
 	lines = get_data(filepath, 'lines_reserved')
 	return jsonify({'attendance':attendance, 'lines_reserved':lines})
@@ -22,21 +21,21 @@ def get_attendace(year,month,day):
 
 @app.route('/prediction/extra_trees/<year>/<month>/<day>', methods=['GET'])
 def get_extra_trees_prediction(year,month,day):
-	filepath = '/var/www/html/data/prediction_extra_tree/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
+	filepath = f'{data_folder}/prediction_extra_tree/{year}-{int(month):02d}-{int(day):02d}.csv'
 	prediction = get_data(filepath, 'pool')
 	return jsonify({'prediction':prediction})
 
 
 @app.route('/prediction/average/<year>/<month>/<day>', methods=['GET'])
 def get_monthly_average_prediction(year,month,day):
-	filepath = '/var/www/html/data/prediction_monthly_average/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
+	filepath = f'{data_folder}/prediction_monthly_average/{year}-{int(month):02d}-{int(day):02d}.csv'
 	prediction = get_data(filepath, 'pool')
 	return jsonify({'prediction':prediction})
 
 
 @app.route('/get_all_for/<year>/<month>/<day>', methods=['GET'])
 def get_all_for(year,month,day):
-	filepath = '/var/www/html/data/prediction_extra_tree/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
+	filepath = f'{data_folder}/prediction_extra_tree/{year}-{int(month):02d}-{int(day):02d}.csv'
 	prediction_extra = get_data(filepath, 'pool')
 
 	filepath = f'{data_folder}/prediction_monthly_average/{year}-{int(month):02d}-{int(day):02d}.csv'

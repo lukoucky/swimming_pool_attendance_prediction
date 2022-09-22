@@ -59,6 +59,5 @@ services:
         volumes:
             - ./web_data:/web_data
             - ./frontend:/frontend
-            - ./backend:/backend
         ports:
             - "9878:9878"
