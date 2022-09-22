@@ -14,7 +14,8 @@ data_folder = '/web_data'
 @app.route('/attendance/<year>/<month>/<day>', methods=['GET'])
 def get_attendace(year,month,day):
 	filepath = f'{data_folder}/{year}-{int(month):02d}-{int(day):02d}.csv'
-	attendance = get_data(filepath,'pool')
+	print(f'Getting data from filepath: {filepath}')
+	attendance = get_data(filepath, 'pool')
 	lines = get_data(filepath,'lines_reserved')
 	return jsonify({'attendance':attendance, 'lines_reserved':lines})
 
@@ -41,7 +42,7 @@ def get_all_for(year,month,day):
 	filepath = '/var/www/html/data/prediction_monthly_average/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
 	prediction_avg = get_data(filepath,'pool')
 
-	filepath = '/var/www/html/data/%d-%02d-%02d.csv'%(int(year),int(month),int(day))
+	filepath = f'{data_folder}/{year}-{int(month):02d}-{int(day):02d}.csv'
 	attendance = get_data(filepath,'pool')
 	lines = get_data(filepath,'lines_reserved')
 	return jsonify({'attendance':attendance, 'lines_reserved':lines, 'prediction':{'monthly_average':prediction_avg, 'extra_trees':prediction_extra}})

@@ -2,7 +2,8 @@ import os
 import logging
 import psycopg2
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+from utils import convert_time_to_cet
 
 
 class DatabaseHelper:
@@ -25,7 +26,12 @@ class DatabaseHelper:
         cursor = self.get_cursor()
         logging.info(query)
         cursor.execute(query)
-        result = cursor.fetchall()
+
+        if query.lower().startswith('insert') or query.lower().startswith('update'):
+            self.db_connection.commit()
+            result = None
+        else:
+            result = cursor.fetchall()
         cursor.close()
         return result
 
@@ -72,6 +78,79 @@ class LinesUsageDBHelper:
                     self.update_entry(row_id, reservation_string, cursor)
         db_connection.commit()
         cursor.close()
+
+
+class OccupancyDatabaseHelper:
+    def __init__(self) -> None:
+        self.db_helper = DatabaseHelper()
+    
+    def save_occupancy(self, data):
+        occupancy = int(data["percentage"])
+        pool  = int(data["pool"])
+        park =  int(data["park"])
+        my_timestamp = convert_time_to_cet(datetime.now())
+
+        query = f'INSERT INTO occupancy (percent, pool, park, time, day_of_week) VALUES ({occupancy}, {pool}, {park}, \'{my_timestamp.strftime("%Y-%m-%d %H:%M:%S")}\', {datetime.today().weekday()});'
+        self.db_helper.execute(query)
+
+    def get_occupancy_vector_for_day(self, date: datetime):
+        next_date = date + timedelta(days=1)
+        query = f'SELECT * FROM occupancy WHERE time >= \'{date}\' and time < \'{next_date}\' ORDER BY time ASC;'
+        result = self.db_helper.execute(query)
+
+        day_data = self.parse_day_data_to_vectors(result, 5, 2)
+        if date.date() in day_data:
+            return day_data[date.date()]
+        else:
+            return ['nan']*288
+    
+    @staticmethod
+    def get_time_slot_for_datetime(timestamp: datetime) -> int:
+        """
+        From datatime object export time slot for the 5 minute split day
+        :param timestamp: Datetime time stamp
+        :return: Slot id for day split after 5 minutes to array
+        """
+        minute_of_day = timestamp.hour*60 + timestamp.minute
+        return round(minute_of_day/5)
+
+    def parse_day_data_to_vectors(self, day_data: list, time_index: int, value_index: int) -> dict:
+        """
+        From the output of database query to vector of 288 values
+        :param day_data: Query results
+        :param time_index: 
+        :param value_index:
+        :return: Dictionary where key is the datatime.date and value is
+                 288 items long array.
+        """
+        days = {}
+        for row in day_data:
+            date = row[time_index].date()
+            time_slot = OccupancyDatabaseHelper.get_time_slot_for_datetime(row[time_index])
+
+            if date not in days:
+                days[date] = ['nan']*288
+        
+            days[date][time_slot] = row[value_index]
+        
+        return days
+
+    def get_lines_usage_vector_for_day(self, date):
+
+        # Since slots in database start at 0 for 6:00 the need to be 
+        # offset by 72 (12 slots per hour * 6 hours)
+        slot_offset = 72 
+        query = f'SELECT * FROM lines_usage WHERE date = \'{date}\';'
+        result = self.db_helper.execute(query)
+
+        # TODO: Get rid of th emagic constants and make this more safe
+        day_data = [0]*288
+        for row in result:
+            day_data[slot_offset+(row[2]*3)] = len(row[3].split(','))
+            day_data[slot_offset+1+(row[2]*3)] = len(row[3].split(','))
+            day_data[slot_offset+2+(row[2]*3)] = len(row[3].split(','))
+
+        return day_data
 
 
 class PredictorDatabaseHelper:

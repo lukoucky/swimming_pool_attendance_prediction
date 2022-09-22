@@ -106,7 +106,6 @@ chart_color[algorithm.LSTM] = 'rgba(14,124,123,0.9)';
 chart_color[pool_data.PEOPLE] = 'rgba(231,29,54,0.7)';
 chart_color[pool_data.LINES] = 'rgba(0,0,255,0)';
 
-const server_address = 'https://lukoucky.com:5000'
 const month_names = {
     1: "Jan",
     2: "Feb",
@@ -314,7 +313,7 @@ function set_date_with_offset(offset){
 
 function update_chart(date_string, generate_new = false){
     var day_api_string = date_string.split('-').join('/');
-    var csv_url = server_address+'/get_all_for/'+day_api_string;
+    var csv_url = '/get_all_for/'+day_api_string;
 
     $.ajax({
         type: "GET",  

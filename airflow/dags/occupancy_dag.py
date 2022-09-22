@@ -1,6 +1,6 @@
 from airflow import DAG
 from scraper.occupancy_scraper import OccupancyScraper
-from utils import convert_time_to_cet
+from utils.database import OccupancyDatabaseHelper
 from datetime import datetime, timedelta
 from airflow.decorators import task
 import logging
@@ -40,31 +40,28 @@ with DAG(
         return res
 
     @task(execution_timeout=timedelta(minutes=1))
-    def save_data(data):
-        occupancy = int(data["percentage"])
-        pool  = int(data["pool"])
-        park =  int(data["park"])
+    def save_data_to_database(data):
+        db_helper = OccupancyDatabaseHelper()
+        db_helper.save_occupancy(data)
+        return data
+    
+    @task(execution_timeout=timedelta(minutes=1))
+    def export_csv():
+        export_time = datetime.strptime(datetime.now().strftime('%Y-%m-%d')+' 00:00:00', '%Y-%m-%d %H:%M:%S')
+        db_helper = OccupancyDatabaseHelper()
+        dt = datetime.now().strftime('%Y-%m-%d')
+        file_path = f'/web_data/{dt}.csv'
+        csv_string = 'time,pool,lines_reserved\n'
 
-        my_timestamp = convert_time_to_cet(datetime.now())
+        lines_usage = db_helper.get_lines_usage_vector_for_day(export_time)
+        occupancy = db_helper.get_occupancy_vector_for_day(export_time)
 
-        db_port = os.getenv('POSTGRES_PORT')
-        db_user = os.getenv('POSTGRES_USER')
-        db_pass = os.getenv('POSTGRES_PASSWORD')
-        db_name = os.getenv('POSTGRES_DB')
+        for pool, lines in zip(occupancy, lines_usage):
+            this_time_string = export_time.strftime('%Y-%m-%d %H:%M:%S')
+            export_time = export_time + timedelta(minutes=5)
+            csv_string += f'{this_time_string},{pool},{lines}\n'
+        
+        with open(file_path, 'w') as csv_file:
+            csv_file.write(csv_string)
 
-        query = f'INSERT INTO occupancy (percent, pool, park, time, day_of_week) VALUES ({occupancy}, {pool}, {park}, \'{my_timestamp.strftime("%Y-%m-%d %H:%M:%S")}\', {datetime.today().weekday()});'
-        logging.info(query)
-        conn = psycopg2.connect(
-            database=db_name, 
-            user=db_user, 
-            password=db_pass, 
-            host='postgres', 
-            port=db_port)
-        cur = conn.cursor()
-        cur.execute(query)
-        conn.commit()
-
-        cur.close()
-        conn.close()
-
-    save_data(run_scraper())
+    save_data_to_database(run_scraper()) >>  export_csv()
