@@ -1,12 +1,8 @@
-from cgitb import reset
 from airflow import DAG
-from predictor.average import DailyAveragePredictor
-from utils.database import PredictorDatabaseHelper
+from predictor.monthly_average import MonthlyAveragePredictor
 from datetime import datetime, timedelta
-from dateutil import tz
 from airflow.decorators import task
 import logging
-import copy
 
 
 default_args = {
@@ -21,6 +17,7 @@ default_args = {
     'execution_timeout': timedelta(seconds=300),
 }
 
+
 with DAG(
     dag_id='daily_average_predictor',
     default_args=default_args, 
@@ -29,43 +26,23 @@ with DAG(
     tags=['predictor']
 ) as dag:
 
+    predictor = MonthlyAveragePredictor(datetime.now())
+
     @task(execution_timeout=timedelta(minutes=1))
     def get_data():
-        db_helper = PredictorDatabaseHelper()
-        logging.info('In average predictor')
-        date_from = datetime.now() - timedelta(days = 33)
-        data = db_helper.get_daily_occupancy_vectors_from(date_from, datetime.today().weekday())
+        data = predictor.get_data()
+        logging.info(f'Got data from DB')
         return data
 
     @task(execution_timeout=timedelta(minutes=1))
     def predict(data):
-        all_data = [0]*288
-        for vector in data.values():
-            for value_id, value in enumerate(vector):
-                if value is not None:
-                    # TODO: Think about how to handle missing data here
-                    all_data[value_id] += value
-
-        final_data = []
-        for value in all_data:
-            final_data.append(value/len(data))
-
+        final_data = predictor.generate_prediction(data)
+        logging.info(f'Goenerated prediction: {final_data}')
         return final_data
 
     @task(execution_timeout=timedelta(minutes=1))
     def export_csv(data):
-        date = datetime.now()
-        export_time = datetime.strptime(date.strftime('%Y-%m-%d')+' 00:00:00', '%Y-%m-%d %H:%M:%S')
-        dt = date.strftime('%Y-%m-%d')
-        file_path = f'/web_data/prediction_monthly_average/{dt}.csv'
-        csv_string = 'time,pool\n'
-
-        for pool in data:
-            this_time_string = export_time.strftime('%Y-%m-%d %H:%M:%S')
-            export_time = export_time + timedelta(minutes=5)
-            csv_string += f'{this_time_string},{pool}\n'
-        
-        with open(file_path, 'w') as csv_file:
-            csv_file.write(csv_string)
+        predictor.export_csv(data)
+        logging.info('Exported data to CSV')
 
     export_csv(predict(get_data()))
