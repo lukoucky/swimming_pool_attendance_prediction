@@ -50,8 +50,8 @@ with DAG(
         file_path = f'/web_data/{dt}.csv'
         csv_string = 'time,pool,lines_reserved\n'
 
-        lines_usage = db_helper.get_lines_usage_vector_for_day(export_time)
-        occupancy = db_helper.get_occupancy_vector_for_day(dt)
+        lines_usage = db_helper.get_lines_usage_vector_for_day(dt)
+        occupancy = db_helper.get_occupancy_vector_for_day(export_time)
 
         for pool, lines in zip(occupancy, lines_usage):
             this_time_string = export_time.strftime('%Y-%m-%d %H:%M:%S')
