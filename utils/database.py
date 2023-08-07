@@ -107,8 +107,24 @@ class OccupancyDatabaseHelper:
     def get_occupancy_vector_for_day(self, date: datetime):
         return self._get_data(date, 2)
     
-    def get_lines_usage_vector_for_day(self, date: datetime):
-        return self._get_data(date, 4)
+    # def get_lines_usage_vector_for_day(self, date: datetime):
+    #     return self._get_data(date, 4)
+
+    def get_lines_usage_vector_for_day(self, date: datetime) -> list[int]:
+        # Since slots in database start at 0 for 6:00 the need to be
+        # offset by 72 (12 slots per hour * 6 hours)
+        slot_offset = 72
+        query = f'SELECT * FROM lines_usage WHERE date = \'{date}\';'
+        result = self.db_helper.execute(query)
+
+        # TODO: Get rid of th emagic constants and make this more safe
+        day_data = [0]*288
+        for row in result:
+            day_data[slot_offset+(row[2]*3)] = len(row[3].split(','))
+            day_data[slot_offset+1+(row[2]*3)] = len(row[3].split(','))
+            day_data[slot_offset+2+(row[2]*3)] = len(row[3].split(','))
+
+        return day_data
 
     @staticmethod
     def get_time_slot_for_datetime(timestamp: datetime) -> int:
