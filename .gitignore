@@ -122,3 +122,6 @@ airflow/data
 
 # Some other data from predictors and scrapers
 web_data/
+
+# Other data
+from_forpsi/

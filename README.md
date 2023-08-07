@@ -1,6 +1,6 @@
 # Swimming Pool Attendance Prediction
 
-This repository contain all code for my personal project - predicting the occupation of [Šutka](https://www.sutka.eu/en/) swimming pool.
+Predicting the occupation of [Šutka](https://www.sutka.eu/en/) swimming pool.
 
 Live web with predictions is running on [https://lukoucky.com](https://lukoucky.com/)
 
@@ -21,16 +21,24 @@ Project is still work in progress. So far following is done:
 
 ## TODO list:
 
-* [ ] Finalize scripts for data exporting
-* [ ] Automated generation of all prediction 
-* [X] ~~Host website with predictions on github.io and get predictions through REST API (needs server with HTTPS)~~
-* [ ] Move from MySQL to SQLite or Postgres
-* [ ] Tune algorithms that are working now for better performance
-* [ ] Refactor very slow `preprocessing_data.py`
-* [ ] Implement Hidden Markov Model 
-* [ ] Tune LSTM's 
-* [ ] Make nicer web page and make it mobile friendly
-* [ ] Move project to containers
+* [ ] Export and import data
+    * [X] ~~Export DB once a day~~
+    * [ ] Import data to database from export file
+* [ ] Predictions
+    * [ ] Generate prediction in airflow
+    * [ ] Generate prediction to database
+    * [ ] Predict from scikit learn model
+    * [ ] Predict from NN model
+* [ ] Algorithms
+    * [ ] RNN
+    * [ ] Hidden Markov Model 
+    * [ ] LSTM
+    * [ ] Transformer
+* [ ] Refactoring
+    * [ ] Refactor very slow `preprocessing_data.py`
+    * [ ] Use SQLite
+    * [ ] Take data from DB directly - not using the exported CSVs
+* [ ] Web page update
 * [ ] Write short blog about this project
 * [ ] Create dashboard with analysis of data and predictions 
 

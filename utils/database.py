@@ -83,7 +83,7 @@ class LinesUsageDBHelper:
 class OccupancyDatabaseHelper:
     def __init__(self) -> None:
         self.db_helper = DatabaseHelper()
-    
+
     def save_occupancy(self, data):
         occupancy = int(data["percentage"])
         pool  = int(data["pool"])
@@ -93,17 +93,23 @@ class OccupancyDatabaseHelper:
         query = f'INSERT INTO occupancy (percent, pool, park, time, day_of_week) VALUES ({occupancy}, {pool}, {park}, \'{my_timestamp.strftime("%Y-%m-%d %H:%M:%S")}\', {datetime.today().weekday()});'
         self.db_helper.execute(query)
 
-    def get_occupancy_vector_for_day(self, date: datetime):
+    def _get_data(self, date: datetime, value_index: int, time_index: int=5) -> dict:
         next_date = date + timedelta(days=1)
         query = f'SELECT * FROM occupancy WHERE time >= \'{date}\' and time < \'{next_date}\' ORDER BY time ASC;'
         result = self.db_helper.execute(query)
 
-        day_data = self.parse_day_data_to_vectors(result, 5, 2)
+        day_data = self.parse_day_data_to_vectors(result, time_index, value_index)
         if date.date() in day_data:
             return day_data[date.date()]
         else:
             return ['nan']*288
+
+    def get_occupancy_vector_for_day(self, date: datetime):
+        return self._get_data(date, 2)
     
+    def get_lines_usage_vector_for_day(self, date: datetime):
+        return self._get_data(date, 4)
+
     @staticmethod
     def get_time_slot_for_datetime(timestamp: datetime) -> int:
         """
@@ -134,23 +140,6 @@ class OccupancyDatabaseHelper:
             days[date][time_slot] = row[value_index]
         
         return days
-
-    def get_lines_usage_vector_for_day(self, date):
-
-        # Since slots in database start at 0 for 6:00 the need to be 
-        # offset by 72 (12 slots per hour * 6 hours)
-        slot_offset = 72 
-        query = f'SELECT * FROM lines_usage WHERE date = \'{date}\';'
-        result = self.db_helper.execute(query)
-
-        # TODO: Get rid of th emagic constants and make this more safe
-        day_data = [0]*288
-        for row in result:
-            day_data[slot_offset+(row[2]*3)] = len(row[3].split(','))
-            day_data[slot_offset+1+(row[2]*3)] = len(row[3].split(','))
-            day_data[slot_offset+2+(row[2]*3)] = len(row[3].split(','))
-
-        return day_data
 
 
 class PredictorDatabaseHelper:

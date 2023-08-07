@@ -4,8 +4,6 @@ from utils.database import OccupancyDatabaseHelper
 from datetime import datetime, timedelta
 from airflow.decorators import task
 import logging
-import psycopg2
-import os
 
 
 default_args = {
@@ -15,9 +13,8 @@ default_args = {
     "email": ["airflow@airflow.com"],
     "email_on_failure": False,
     "email_on_retry": False,    
-    "retries": 1,
-    "retry_delay": timedelta(minutes=5),
-    'execution_timeout': timedelta(seconds=300),
+    "retries": 0,
+    'execution_timeout': timedelta(seconds=290),
     # 'queue': 'bash_queue',
     # 'pool': 'backfill',
     # 'priority_weight': 10,
